@@ -1,5 +1,7 @@
 import User from '../models/User.js';
 import Profile from '../models/Profile.js';
+import StudentProfile from '../models/StudentProfile.js';
+import MentorProfile from '../models/MentorProfile.js';
 import { generateToken } from '../utils/generateToken.js';
 
 // @desc    Register a new user
@@ -30,6 +32,9 @@ const register = async (req, res, next) => {
         id: user._id,
         email: user.email,
         role: user.role,
+        onboardingCompleted: user.onboardingCompleted,
+        profileImage: user.profileImage,
+        profileImagePublicId: user.profileImagePublicId,
       },
     });
   } catch (error) {
@@ -63,6 +68,9 @@ const login = async (req, res, next) => {
         email: user.email,
         role: user.role,
         isProfileComplete: user.isProfileComplete,
+        onboardingCompleted: user.onboardingCompleted,
+        profileImage: user.profileImage,
+        profileImagePublicId: user.profileImagePublicId,
       },
     });
   } catch (error) {
@@ -76,7 +84,19 @@ const login = async (req, res, next) => {
 const getMe = async (req, res, next) => {
   try {
     const user = await User.findById(req.user._id);
-    const profile = await Profile.findOne({ user: req.user._id });
+    let profile = null;
+
+    if (user.onboardingCompleted) {
+      if (user.role === 'student') {
+        profile = await StudentProfile.findOne({ userId: user._id });
+      } else if (user.role === 'mentor') {
+        profile = await MentorProfile.findOne({ userId: user._id });
+      }
+    }
+
+    if (!profile) {
+      profile = await Profile.findOne({ user: req.user._id });
+    }
 
     res.json({
       user: {
@@ -84,6 +104,9 @@ const getMe = async (req, res, next) => {
         email: user.email,
         role: user.role,
         isProfileComplete: user.isProfileComplete,
+        onboardingCompleted: user.onboardingCompleted,
+        profileImage: user.profileImage,
+        profileImagePublicId: user.profileImagePublicId,
         profile,
       },
     });

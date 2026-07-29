@@ -21,9 +21,27 @@ import InterviewSession from './pages/interview/InterviewSession';
 import Leaderboard from './pages/Leaderboard';
 import Settings from './pages/Settings';
 
+// Onboarding Pages
+import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
+import StudentOnboardingPage from './pages/onboarding/StudentOnboardingPage';
+import MentorOnboardingPage from './pages/onboarding/MentorOnboardingPage';
+import ProfilePage from './pages/ProfilePage';
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && !user.onboardingCompleted) {
+    return <Navigate to="/onboarding/role" replace />;
+  }
+  return <>{children}</>;
+}
+
+function OnboardingRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, user } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (user && user.onboardingCompleted) {
+    return <Navigate to="/dashboard" replace />;
+  }
   return <>{children}</>;
 }
 
@@ -66,6 +84,32 @@ function App() {
           <Route path="/register" element={<RegisterPage />} />
         </Route>
 
+        {/* Onboarding Routes */}
+        <Route
+          path="/onboarding/role"
+          element={
+            <OnboardingRoute>
+              <RoleSelectionPage />
+            </OnboardingRoute>
+          }
+        />
+        <Route
+          path="/onboarding/student"
+          element={
+            <OnboardingRoute>
+              <StudentOnboardingPage />
+            </OnboardingRoute>
+          }
+        />
+        <Route
+          path="/onboarding/mentor"
+          element={
+            <OnboardingRoute>
+              <MentorOnboardingPage />
+            </OnboardingRoute>
+          }
+        />
+
         {/* Protected Routes */}
         <Route
           path="/dashboard"
@@ -83,6 +127,16 @@ function App() {
           <Route path="interviews/:id" element={<InterviewSession />} />
           <Route path="leaderboard" element={<Leaderboard />} />
           <Route path="settings" element={<Settings />} />
+        </Route>
+
+        <Route
+          element={
+            <ProtectedRoute>
+              <MainLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/profile" element={<ProfilePage />} />
         </Route>
 
         {/* Fallback */}

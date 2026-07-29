@@ -28,12 +28,27 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['user', 'admin', 'student', 'mentor'],
       default: 'user',
     },
     isProfileComplete: {
       type: Boolean,
       default: false,
+    },
+    onboardingCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    profileId: {
+      type: mongoose.Schema.Types.ObjectId,
+    },
+    profileImage: {
+      type: String,
+      default: null,
+    },
+    profileImagePublicId: {
+      type: String,
+      default: null,
     },
     refreshToken: {
       type: String,

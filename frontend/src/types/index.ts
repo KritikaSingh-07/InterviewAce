@@ -2,9 +2,41 @@
 export interface User {
   id: string;
   email: string;
-  role: 'user' | 'admin';
+  role: 'user' | 'admin' | 'student' | 'mentor';
   isProfileComplete: boolean;
-  profile?: Profile;
+  onboardingCompleted: boolean;
+  profileImage?: string | null;
+  profileImagePublicId?: string | null;
+  profile?: Profile | StudentProfile | MentorProfile;
+}
+
+export interface StudentProfile {
+  _id: string;
+  userId: string;
+  fullName: string;
+  college: string;
+  degree: string;
+  branch: string;
+  year: number;
+  careerGoal: string;
+  targetCompanies: string[];
+  selfAssessment: any;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MentorProfile {
+  _id: string;
+  userId: string;
+  fullName: string;
+  company: string;
+  designation: string;
+  experience: number;
+  skills: string[];
+  linkedin: string;
+  bio: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Profile {

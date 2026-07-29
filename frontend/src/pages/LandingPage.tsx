@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { useRef, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { useThemeStore } from '../store/themeStore';
 import {
@@ -35,6 +35,7 @@ const staggerContainer = {
 };
 
 export default function LandingPage() {
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const { isAuthenticated } = useAuthStore();
   const { isDarkMode, toggle } = useThemeStore();
   const navigate = useNavigate();
@@ -398,6 +399,85 @@ export default function LandingPage() {
             <ArrowRight className="w-5 h-5 ml-2 inline" />
           </button>
         </motion.div>
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-24 bg-gray-50/50 dark:bg-gray-900/10 border-t border-gray-100 dark:border-gray-900">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16 space-y-4"
+          >
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">
+              Frequently Asked <span className="gradient-text">Questions</span>
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-sm sm:text-base max-w-xl mx-auto">
+              Got questions? We have answers. Find answers to common inquiries about using InterviewAce.
+            </p>
+          </motion.div>
+
+          <div className="space-y-4">
+            {[
+              {
+                question: 'What is InterviewAce?',
+                answer: 'InterviewAce is an AI-powered interview preparation platform designed to help students and professionals practice mock interviews, get detailed performance metrics, and generate customized career roadmaps.',
+              },
+              {
+                question: 'Is InterviewAce free?',
+                answer: 'Yes! We offer a comprehensive free tier that includes basic mock interviews, personalized roadmap generation, and access to the global leaderboard.',
+              },
+              {
+                question: 'How does AI Mock Interview work?',
+                answer: 'Our AI interviewer simulates a live interview session by asking adaptive technical, behavioral, and system design questions. It analyzes your answers to evaluate accuracy and communication skills.',
+              },
+              {
+                question: 'Can I edit my profile later?',
+                answer: 'Yes, you can edit your profile details at any time from the settings or dedicated profile section. Any changes are immediately saved and sync across your profile card.',
+              },
+            ].map((faq, index) => {
+              const isOpen = openIndex === index;
+              return (
+                <div
+                  key={index}
+                  className="rounded-2xl border border-gray-200/60 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden transition-all duration-300 hover:shadow-sm"
+                >
+                  <button
+                    type="button"
+                    onClick={() => setOpenIndex(isOpen ? null : index)}
+                    aria-expanded={isOpen}
+                    className="w-full flex items-center justify-between p-5 text-left font-semibold text-gray-900 dark:text-white hover:text-indigo-650 dark:hover:text-indigo-400 transition-colors focus:outline-none"
+                  >
+                    <span>{faq.question}</span>
+                    <ChevronDown
+                      className={`w-5 h-5 text-gray-400 dark:text-gray-500 transition-transform duration-300 ${
+                        isOpen ? 'rotate-180 text-indigo-500' : ''
+                      }`}
+                    />
+                  </button>
+
+                  <AnimatePresence initial={false}>
+                    {isOpen && (
+                      <motion.div
+                        key="content"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                      >
+                        <div className="px-5 pb-5 pt-1 text-sm text-gray-500 dark:text-gray-400 leading-relaxed border-t border-gray-100 dark:border-gray-800/40">
+                          {faq.answer}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </section>
 
       {/* Footer */}
