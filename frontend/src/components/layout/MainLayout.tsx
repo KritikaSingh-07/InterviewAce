@@ -18,24 +18,13 @@ import {
   X,
   Bell,
   UserCircle2,
-  Users,
-  ClipboardList,
-  MessageSquareText,
 } from 'lucide-react';
 
-const studentSidebarLinks = [
+const sidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/roadmaps', icon: Route, label: 'Roadmaps' },
   { to: '/dashboard/interviews', icon: BotMessageSquare, label: 'Mock Interviews' },
   { to: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
-];
-
-const mentorSidebarLinks = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { to: '/dashboard/students', icon: Users, label: 'Students' },
-  { to: '/dashboard/sessions', icon: ClipboardList, label: 'Sessions' },
-  { to: '/dashboard/feedback', icon: MessageSquareText, label: 'Feedback' },
   { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 
@@ -47,9 +36,6 @@ export default function MainLayout() {
   const { isDarkMode, toggle } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
-
-  const isMentor = user?.role === 'mentor';
-  const sidebarLinks = isMentor ? mentorSidebarLinks : studentSidebarLinks;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

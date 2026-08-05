@@ -16,7 +16,6 @@ import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import studentProfileRoutes from './routes/studentProfileRoutes.js';
 import mentorProfileRoutes from './routes/mentorProfileRoutes.js';
-import mentorRoutes from './routes/mentorRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,8 +32,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
@@ -55,7 +54,6 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/student-profile', studentProfileRoutes);
 app.use('/api/mentor-profile', mentorProfileRoutes);
-app.use('/api/mentor', mentorRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
