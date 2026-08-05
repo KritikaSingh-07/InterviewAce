@@ -73,6 +73,26 @@ userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
 
+// Virtuals for populate() support.
+// The leaderboard and mentor controllers populate these paths on the User model.
+userSchema.virtual('profile', {
+  ref: 'Profile',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+});
+
+userSchema.virtual('studentProfile', {
+  ref: 'StudentProfile',
+  localField: '_id',
+  foreignField: 'userId',
+  justOne: true,
+});
+
+// // Include virtuals in JSON/object serialization
+// userSchema.set('toJSON', { virtuals: true });
+// userSchema.set('toObject', { virtuals: true });
+
 const User = mongoose.model('User', userSchema);
 export default User;
 

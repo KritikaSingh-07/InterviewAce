@@ -191,7 +191,12 @@ const mockInterviewSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
-
+    // Mentor who conducted/scheduled this interview (optional - AI interviews have no mentor)
+    mentor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     role: {
       type: String,
       required: [true, "Interview role is required"],
@@ -281,10 +286,37 @@ const mockInterviewSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
-
-    voiceLanguage: {
+    // Mentor-led interview scheduling & feedback fields
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    suggestions: {
       type: String,
-      default: "en-US",
+      default: '',
+    },
+    mentorFeedback: {
+      strengths: [String],
+      areasToImprove: [String],
+      detailedNotes: String,
+      communicationScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: null,
+      },
+      technicalScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: null,
+      },
     },
   },
   {
@@ -292,50 +324,5 @@ const mockInterviewSchema = new mongoose.Schema(
   }
 );
 
-// =========================
-// Indexes
-// =========================
-
-mockInterviewSchema.index({
-  user: 1,
-  createdAt: -1,
-});
-
-mockInterviewSchema.index({
-  status: 1,
-});
-
-mockInterviewSchema.index({
-  expiresAt: 1,
-});
-
-// =========================
-// Virtuals
-// =========================
-
-mockInterviewSchema.virtual("answeredQuestions").get(function () {
-  return this.questions.filter(
-    (q) => q.status === "answered"
-  ).length;
-});
-
-mockInterviewSchema.virtual("remainingQuestions").get(function () {
-  return this.questions.filter(
-    (q) => q.status === "pending"
-  ).length;
-});
-
-mockInterviewSchema.set("toJSON", {
-  virtuals: true,
-});
-
-mockInterviewSchema.set("toObject", {
-  virtuals: true,
-});
-
-const MockInterview = mongoose.model(
-  "MockInterview",
-  mockInterviewSchema
-);
-
+const MockInterview = mongoose.model('MockInterview', mockInterviewSchema);
 export default MockInterview;
