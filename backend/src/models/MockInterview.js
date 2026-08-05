@@ -85,6 +85,12 @@ const mockInterviewSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    // Mentor who conducted/scheduled this interview (optional - AI interviews have no mentor)
+    mentor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
     role: {
       type: String,
       required: [true, 'Interview role is required'],
@@ -122,6 +128,38 @@ const mockInterviewSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Mentor-led interview scheduling & feedback fields
+    scheduledAt: {
+      type: Date,
+      default: null,
+    },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: null,
+    },
+    suggestions: {
+      type: String,
+      default: '',
+    },
+    mentorFeedback: {
+      strengths: [String],
+      areasToImprove: [String],
+      detailedNotes: String,
+      communicationScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: null,
+      },
+      technicalScore: {
+        type: Number,
+        min: 0,
+        max: 100,
+        default: null,
+      },
+    },
   },
   {
     timestamps: true,
@@ -130,4 +168,3 @@ const mockInterviewSchema = new mongoose.Schema(
 
 const MockInterview = mongoose.model('MockInterview', mockInterviewSchema);
 export default MockInterview;
-

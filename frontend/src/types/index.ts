@@ -230,6 +230,66 @@ export interface InterviewFormData {
   duration: number;
 }
 
+// ==================== MENTOR DASHBOARD ====================
+export interface MentorStudent {
+  _id: string;
+  email: string;
+  profileImage?: string | null;
+  profileImagePublicId?: string | null;
+  fullName: string;
+  college: string;
+  degree: string;
+  branch: string;
+  year: number;
+  careerGoal: string;
+  targetCompanies: string[];
+  selfAssessment: Record<string, number>;
+  score: number;
+  totalPoints: number;
+  weeklyPoints: number;
+  interviewsCompleted: number;
+}
+
+export interface MentorInterviewSession {
+  _id: string;
+  user: string;
+  mentor: string;
+  role: string;
+  type: string;
+  duration: number;
+  status: 'scheduled' | 'in-progress' | 'completed' | 'cancelled';
+  scheduledAt?: string | null;
+  rating?: number | null;
+  suggestions?: string;
+  mentorFeedback?: {
+    strengths: string[];
+    areasToImprove: string[];
+    detailedNotes: string;
+    communicationScore?: number | null;
+    technicalScore?: number | null;
+  };
+  totalScore: number;
+  questions: any[];
+  createdAt: string;
+  updatedAt: string;
+  studentName?: string;
+  studentProfile?: {
+    fullName: string;
+    careerGoal: string;
+    college: string;
+    degree: string;
+    branch: string;
+    year: number;
+  };
+}
+
+export interface MentorInterviewFormData {
+  studentId: string;
+  scheduledAt: string;
+  duration: number;
+  type: string;
+}
+
 // ==================== API TYPES ====================
 export interface ApiResponse<T> {
   data?: T;
