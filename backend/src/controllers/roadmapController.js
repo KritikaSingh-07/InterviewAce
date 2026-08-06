@@ -1,6 +1,6 @@
 import Roadmap from '../models/Roadmap.js';
 import Leaderboard from '../models/Leaderboard.js';
-import { generateAIResponse } from '../config/ai.js';
+import { generateAIResponses } from '../config/ai.js';
 import { SYSTEM_PROMPTS, generateRoadmapPrompt } from '../utils/aiPrompts.js';
 
 // @desc    Generate new AI roadmap
@@ -17,7 +17,7 @@ const generateRoadmap = async (req, res, next) => {
       duration: duration || 4,
     });
 
-    const aiResponse = await generateAIResponse(prompt, SYSTEM_PROMPTS.ROADMAP_GENERATOR);
+    const aiResponse = await generateAIResponses(prompt, SYSTEM_PROMPTS.ROADMAP_GENERATOR);
 
     let parsed;
     try {

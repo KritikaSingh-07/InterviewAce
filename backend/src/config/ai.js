@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import Groq from "groq-sdk";
-import OpenAI from 'openai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const AI_PROVIDER = (process.env.AI_PROVIDER || "groq").toLowerCase();
 
@@ -78,8 +77,8 @@ const generateAIResponse = async (
 };
 
 export {
-  generateAIResponse,
   getAIClient,
+   generateAIResponse,
 };
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -110,7 +109,7 @@ const generateWithOpenAI = async (prompt, systemPrompt) => {
 };
 
 // Fallback logic: try Gemini first, then OpenAI
-const generateAIResponse = async (prompt, systemPrompt = 'You are an expert interview coach and career advisor.') => {
+const generateAIResponses = async (prompt, systemPrompt = 'You are an expert interview coach and career advisor.') => {
   try {
     return await generateWithGemini(prompt, systemPrompt);
   } catch (geminiError) {
@@ -124,4 +123,4 @@ const generateAIResponse = async (prompt, systemPrompt = 'You are an expert inte
   }
 };
 
-export { generateAIResponse, generateWithGemini, generateWithOpenAI };
+export { generateAIResponses, generateWithGemini, generateWithOpenAI };
