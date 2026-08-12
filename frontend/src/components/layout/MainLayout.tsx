@@ -10,7 +10,6 @@ import {
   Route,
   BotMessageSquare,
   Trophy,
-  Settings,
   LogOut,
   ChevronLeft,
   ChevronRight,
@@ -24,6 +23,10 @@ import {
   Sparkles,
   BellOff,
   CheckCircle2,
+  Users,
+  ClipboardList,
+  MessageSquareText,
+  CreditCard,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -35,12 +38,20 @@ interface NotificationItem {
   createdAt: string;
 }
 
-const sidebarLinks = [
+const studentSidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/roadmaps', icon: Route, label: 'Roadmaps' },
   { to: '/dashboard/interviews', icon: BotMessageSquare, label: 'Mock Interviews' },
   { to: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
-  { to: '/dashboard/settings', icon: Settings, label: 'Settings' },
+  { to: '/dashboard/mentors', icon: Users, label: 'Mentors' },
+  { to: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
+];
+
+const mentorSidebarLinks = [
+  { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
+  { to: '/dashboard/students', icon: Users, label: 'Students' },
+  { to: '/dashboard/sessions', icon: ClipboardList, label: 'Sessions' },
+  { to: '/dashboard/feedback', icon: MessageSquareText, label: 'Feedback' },
 ];
 
 export default function MainLayout() {
@@ -121,6 +132,13 @@ export default function MainLayout() {
     if (hours < 24) return `${hours}h ago`;
     return `${Math.floor(hours / 24)}d ago`;
   };
+
+const isMentor = user?.role === 'mentor';
+
+  // Mentors section is visible to all students. For non-Pro/Agency students,
+  // the Mentors page itself renders a locked state with an "Upgrade Now" CTA.
+  // (Already hidden from mentors who use the mentor sidebar.)
+  const sidebarLinks = isMentor ? mentorSidebarLinks : studentSidebarLinks;
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -428,6 +446,16 @@ export default function MainLayout() {
                         transition={{ duration: 0.15 }}
                         className="absolute right-0 mt-2 w-48 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl z-50 py-1 overflow-hidden"
                       >
+                        <button
+                          onClick={() => {
+                            setDropdownOpen(false);
+                            navigate('/dashboard/billing');
+                          }}
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/50 hover:text-gray-900 dark:hover:text-white transition-colors"
+                        >
+                          <CreditCard className="w-4 h-4 text-gray-400" />
+                          <span>Billing & Plan</span>
+                        </button>
                         <button
                           onClick={() => {
                             setDropdownOpen(false);

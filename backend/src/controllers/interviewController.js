@@ -3,107 +3,58 @@ import Leaderboard from '../models/Leaderboard.js';
 import { generateAIResponse } from '../config/ai.js';
 import { createNotification } from './notificationController.js';
 import {
-  SYSTEM_PROMPTS,
-  generateInterviewPrompt,
-} from '../utils/aiPrompts.js';
+  generateNextQuestion,
+  evaluateInterviewAnswer,
+  generateOverallFeedback,
+  calculateNextDifficulty,
+} from "../services/interviewService.js";
+import { assertCanStartInterview } from "../services/planLimitService.js";
 
-// @desc    Start a new mock interview
-// @route   POST /api/interviews/start
-// @access  Private
+// ======================================================
+// @desc Start Interview
+// @route POST /api/interviews/start
+// ======================================================
 const startInterview = async (req, res, next) => {
   try {
+    await assertCanStartInterview(req.user);
+
     const { role, experience, type, duration } = req.body;
 
-    // Generate initial questions using AI
-    const prompt = `
-Generate exactly 5 interview questions.
-
-Role: ${role}
-Experience: ${experience}
-Interview Type: ${type}
-
-Return ONLY a valid JSON array.
-
-Each object MUST follow this schema:
-
-[
-  {
-    "question": "...",
-    "questionNumber": 1,
-    "questionType": "technical",
-    "difficulty": "easy"
-  }
-]
-
-Rules:
-
-questionType can ONLY be one of:
-
-technical
-behavioral
-coding
-system-design
-mixed
-
-Never output:
-Technical
-Behavioral
-Coding
-System Design
-Technical/Behavioral
-
-Difficulty can ONLY be:
-easy
-medium
-hard
-
-No markdown.
-No explanation.
-Only JSON.
-`;
-    const aiResponse = await generateAIResponse(
-      prompt,
-      SYSTEM_PROMPTS.INTERVIEW_QUESTION_GENERATOR
+    const interviewDuration = duration || 10;
+    const startedAt = new Date();
+    const expiresAt = new Date(
+      startedAt.getTime() + interviewDuration * 60 * 1000
     );
 
-    let questions;
-    try {
-      const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
-      questions = jsonMatch
-        ? JSON.parse(jsonMatch[0])
-        : JSON.parse(aiResponse);
-    } catch {
-      questions = [
-        { question: 'Tell me about yourself and your experience.', questionType: 'behavioral', difficulty: 'easy' },
-        { question: 'What are your greatest strengths and weaknesses?', questionType: 'behavioral', difficulty: 'easy' },
-      ];
-    }
+    const firstQuestion = await generateNextQuestion({
+      role,
+      experience,
+      interviewType: type,
+      previousQuestions: [],
+      currentDifficulty: "easy",
+    });
 
     const interview = await MockInterview.create({
       user: req.user._id,
       role,
       experience,
       type,
-      duration: duration || 30,
-      status: 'in-progress',
-      startedAt: new Date(),
-      questions: questions.map((q, index) => ({
-        question: q.question,
-        questionNumber: q.questionNumber || index + 1,
-
-        questionType: (
-            q.questionType || type || "technical"
-        )
-            .toLowerCase()
-            .replace("system design", "system-design")
-            .replace("technical/behavioral", "mixed")
-            .trim(),
-
-        difficulty: (q.difficulty || "easy").toLowerCase(),
-      })),
+      duration: interviewDuration,
+      status: "in-progress",
+      startedAt,
+      expiresAt,
+      currentDifficulty: "easy",
+      totalQuestionsAsked: 1,
+      questions: [
+        {
+          question: firstQuestion.question,
+          questionType: firstQuestion.questionType,
+          difficulty: firstQuestion.difficulty,
+          questionNumber: 1,
+          maxScore: firstQuestion.maxScore,
+        },
+      ],
     });
-
-    res.status(201).json({ interview });
 
     createNotification({
       userId: req.user._id,
@@ -113,14 +64,20 @@ Only JSON.
       referenceId: interview._id,
       referenceModel: 'MockInterview',
     });
+
+    return res.status(201).json({
+      success: true,
+      interview,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Submit answer for a question
-// @route   POST /api/interviews/:id/question/:questionId/answer
-// @access  Private
+// ======================================================
+// @desc Submit Answer
+// @route POST /api/interviews/:id/question/:questionId/answer
+// ======================================================
 const submitAnswer = async (req, res, next) => {
   try {
     const { answer, duration } = req.body;
@@ -130,61 +87,138 @@ const submitAnswer = async (req, res, next) => {
     });
 
     if (!interview) {
-      return res.status(404).json({ error: 'Interview not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
+    }
+
+    if (interview.status === "completed") {
+      return res.status(400).json({
+        success: false,
+        message: "Interview already completed.",
+      });
     }
 
     const question = interview.questions.id(req.params.questionId);
     if (!question) {
-      return res.status(404).json({ error: 'Question not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Question not found",
+      });
+    }
+
+    if (question.status === "answered") {
+      return res.status(400).json({
+        success: false,
+        message: "Question already answered.",
+      });
     }
 
     question.userAnswer = answer;
     question.duration = duration || 0;
+    question.status = "answered";
+    question.answeredAt = new Date();
 
-    // Evaluate answer with AI
-    const prompt = generateInterviewPrompt(
-      interview.role,
-      interview.experience,
-      interview.type,
-      question.question,
+    // ===============================
+    // Evaluate Current Answer
+    // ===============================
+    const evaluation = await evaluateInterviewAnswer(
+      interview,
+      question,
       answer
     );
+    question.aiFeedback = evaluation.feedback;
+    question.score = evaluation.score;
 
-    const aiFeedback = await generateAIResponse(
-      prompt,
-      SYSTEM_PROMPTS.INTERVIEW_EVALUATOR
+    // ===============================
+    // Adaptive Difficulty
+    // ===============================
+    const recentScores = interview.questions
+      .filter((q) => q.status === "answered")
+      .slice(-3)
+      .map((q) => q.score || 0);
+    const elapsedMinutes =
+      (Date.now() - interview.startedAt.getTime()) / 60000;
+    const timeUsedPercent = elapsedMinutes / interview.duration;
+    interview.currentDifficulty = calculateNextDifficulty(
+      interview.currentDifficulty,
+      recentScores,
+      timeUsedPercent
     );
 
-    try {
-      const jsonMatch = aiFeedback.match(/\{[\s\S]*\}/);
-      const feedback = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(aiFeedback);
+    // ===============================
+    // Remaining Time
+    // ===============================
+    const remainingMinutes = interview.duration - elapsedMinutes;
 
-      question.aiFeedback = feedback;
-      question.score = Math.round(
-        (feedback.communicationScore + feedback.technicalAccuracy) / 2
+    // ===============================
+    // Timer Finished
+    // ===============================
+    if (remainingMinutes <= 0) {
+      interview.status = "completed";
+      interview.completedAt = new Date();
+      const report = await generateOverallFeedback(interview);
+      interview.overallFeedback = report.overallFeedback;
+      interview.totalScore = report.totalScore;
+      interview.aiAnalysisComplete = true;
+      await interview.save();
+      await awardInterviewPoints(
+        req.user._id,
+        interview._id,
+        interview.totalScore
       );
-    } catch {
-      question.aiFeedback = {
-        strengths: ['Attempted to answer'],
-        weaknesses: ['Could not analyze fully'],
-        communicationScore: 50,
-        technicalAccuracy: 50,
-        improvementTips: ['Try to provide more detailed answers'],
-      };
-      question.score = 50;
+
+      return res.json({
+        success: true,
+        interviewCompleted: true,
+        interview,
+      });
     }
 
+    // ===============================
+    // Generate Next Question
+    // ===============================
+    const nextQuestion = await generateNextQuestion({
+      role: interview.role,
+      experience: interview.experience,
+      interviewType: interview.type,
+      previousQuestions: interview.questions,
+      currentDifficulty: interview.currentDifficulty,
+    });
+
+    interview.questions.push({
+      question: nextQuestion.question,
+      questionType: nextQuestion.questionType,
+      difficulty: nextQuestion.difficulty,
+      questionNumber: interview.totalQuestionsAsked + 1,
+      expectedConcepts: nextQuestion.expectedConcepts || [],
+      maxScore: nextQuestion.maxScore,
+    });
+
+    interview.totalQuestionsAsked += 1;
     await interview.save();
 
-    res.json({ question });
+    return res.json({
+      success: true,
+      interviewCompleted: false,
+      nextQuestion: interview.questions.at(-1),
+      progress: {
+        answered: interview.questions.filter(
+          (q) => q.status === "answered"
+        ).length,
+        remainingTime: Math.max(0, Math.floor(remainingMinutes)),
+      },
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Complete interview and get overall feedback
-// @route   POST /api/interviews/:id/complete
-// @access  Private
+// ======================================================
+// @desc Complete Interview
+// @route POST /api/interviews/:id/complete
+// ======================================================
 const completeInterview = async (req, res, next) => {
   try {
     const interview = await MockInterview.findOne({
@@ -193,64 +227,35 @@ const completeInterview = async (req, res, next) => {
     });
 
     if (!interview) {
-      return res.status(404).json({ error: 'Interview not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
     }
 
-    interview.status = 'completed';
+    if (interview.status === "completed") {
+      return res.json({
+        success: true,
+        interview,
+      });
+    }
 
-    // Calculate overall scores
-    const answeredQuestions = interview.questions.filter((q) => q.userAnswer);
-    const totalScore =
-      answeredQuestions.reduce((sum, q) => sum + (q.score || 0), 0) /
-      (answeredQuestions.length || 1);
+    interview.status = "completed";
+    interview.completedAt = new Date();
 
-    const avgCommunication =
-      answeredQuestions.reduce(
-        (sum, q) => sum + (q.aiFeedback?.communicationScore || 0),
-        0
-      ) / (answeredQuestions.length || 1);
-
-    const avgTechnical =
-      answeredQuestions.reduce(
-        (sum, q) => sum + (q.aiFeedback?.technicalAccuracy || 0),
-        0
-      ) / (answeredQuestions.length || 1);
-
-    // Collect all feedback
-    const allStrengths = answeredQuestions.flatMap(
-      (q) => q.aiFeedback?.strengths || []
-    );
-    const allWeaknesses = answeredQuestions.flatMap(
-      (q) => q.aiFeedback?.weaknesses || []
-    );
-    const allMissingKeywords = answeredQuestions.flatMap(
-      (q) => q.aiFeedback?.missingKeywords || []
-    );
-    const allTips = answeredQuestions.flatMap(
-      (q) => q.aiFeedback?.improvementTips || []
-    );
-
-    interview.overallFeedback = {
-      overallScore: Math.round(totalScore),
-      strengths: [...new Set(allStrengths)],
-      weaknesses: [...new Set(allWeaknesses)],
-      communicationScore: Math.round(avgCommunication),
-      technicalAccuracy: Math.round(avgTechnical),
-      confidenceScore: Math.round(totalScore),
-      missingKeywords: [...new Set(allMissingKeywords)],
-      improvementTips: [...new Set(allTips)],
-      detailedAnalysis: `Completed ${answeredQuestions.length} out of ${interview.questions.length} questions. Overall performance: ${Math.round(totalScore)}/100.`,
-    };
-
-    interview.totalScore = Math.round(totalScore);
+    const report = await generateOverallFeedback(interview);
+    interview.overallFeedback = report.overallFeedback;
+    interview.totalScore = report.totalScore;
     interview.aiAnalysisComplete = true;
 
     await interview.save();
 
-    // Award leaderboard points
-    await awardInterviewPoints(req.user._id, interview._id, totalScore);
+    await awardInterviewPoints(
+      req.user._id,
+      interview._id,
+      interview.totalScore
+    );
 
-    res.json({ interview });
     createNotification({
       userId: req.user._id,
       type: 'interview_completed',
@@ -259,28 +264,41 @@ const completeInterview = async (req, res, next) => {
       referenceId: interview._id,
       referenceModel: 'MockInterview',
     });
+
+    return res.json({
+      success: true,
+      interview,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get user's interview history
-// @route   GET /api/interviews
-// @access  Private
+// ======================================================
+// @desc Get All Interviews
+// @route GET /api/interviews
+// ======================================================
 const getInterviews = async (req, res, next) => {
   try {
-    const interviews = await MockInterview.find({ user: req.user._id })
-      .sort('-createdAt')
-      .select('-questions.userAnswer -overallFeedback.detailedAnalysis');
-    res.json({ interviews });
+    const interviews = await MockInterview.find({
+      user: req.user._id,
+    })
+      .sort("-createdAt")
+      .select("-questions.userAnswer");
+
+    res.json({
+      success: true,
+      interviews,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// @desc    Get single interview with full details
-// @route   GET /api/interviews/:id
-// @access  Private
+// ======================================================
+// @desc Get Single Interview
+// @route GET /api/interviews/:id
+// ======================================================
 const getInterviewById = async (req, res, next) => {
   try {
     const interview = await MockInterview.findOne({
@@ -289,42 +307,68 @@ const getInterviewById = async (req, res, next) => {
     });
 
     if (!interview) {
-      return res.status(404).json({ error: 'Interview not found' });
+      return res.status(404).json({
+        success: false,
+        message: "Interview not found",
+      });
     }
 
-    res.json({ interview });
+    // Auto-complete if time expired
+    if (
+      interview.status === "in-progress" &&
+      interview.expiresAt &&
+      new Date() >= new Date(interview.expiresAt)
+    ) {
+      interview.status = "completed";
+      interview.completedAt = new Date();
+
+      if (!interview.aiAnalysisComplete) {
+        const report = await generateOverallFeedback(interview);
+        interview.overallFeedback = report.overallFeedback;
+        interview.totalScore = report.totalScore;
+        interview.aiAnalysisComplete = true;
+      }
+
+      await interview.save();
+    }
+
+    return res.json({
+      success: true,
+      interview,
+    });
   } catch (error) {
     next(error);
   }
 };
 
-// Helper: Award points for completing interviews
+// ======================================================
+// Helper: Award Leaderboard Points
+// ======================================================
 const awardInterviewPoints = async (userId, interviewId, score) => {
   try {
     let leaderboard = await Leaderboard.findOne({ user: userId });
     if (!leaderboard) {
       leaderboard = await Leaderboard.create({ user: userId });
     }
-
-    const pointsAwarded = Math.round(score * 1.5); // Score-based points
-    leaderboard.totalPoints += pointsAwarded;
-    leaderboard.weeklyPoints += pointsAwarded;
+    const points = Math.round(score * 1.5);
+    leaderboard.totalPoints += points;
+    leaderboard.weeklyPoints += points;
     leaderboard.stats.interviewsCompleted += 1;
     leaderboard.stats.averageScore =
-      (leaderboard.stats.averageScore * (leaderboard.stats.interviewsCompleted - 1) + score) /
+      ((leaderboard.stats.averageScore *
+        (leaderboard.stats.interviewsCompleted - 1)) +
+        score) /
       leaderboard.stats.interviewsCompleted;
-
     leaderboard.pointsHistory.push({
-      source: 'mock_interview',
-      points: pointsAwarded,
-      description: `Completed mock interview with score ${Math.round(score)}`,
+      source: "mock_interview",
+      points,
+      description: `Completed interview (${Math.round(score)})`,
       referenceId: interviewId,
-      referenceModel: 'MockInterview',
+      referenceModel: "MockInterview",
     });
-
     await leaderboard.save();
   } catch (error) {
-    console.error('Failed to award interview points:', error);
+    console.error("Leaderboard update error:", error);
   }
 };
 
@@ -335,4 +379,3 @@ export {
   getInterviews,
   getInterviewById,
 };
-

@@ -13,13 +13,18 @@ import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/dashboard/Dashboard';
+import MentorDashboard from './pages/dashboard/MentorDashboard';
+import MentorStudents from './pages/dashboard/MentorStudents';
+import MentorSessions from './pages/dashboard/MentorSessions';
+import MentorFeedback from './pages/dashboard/MentorFeedback';
 import ProfileSetup from './pages/ProfileSetup';
 import RoadmapGenerator from './pages/roadmap/RoadmapGenerator';
 import RoadmapDetail from './pages/roadmap/RoadmapDetail';
 import MockInterview from './pages/interview/MockInterview';
 import InterviewSession from './pages/interview/InterviewSession';
 import Leaderboard from './pages/Leaderboard';
-import Settings from './pages/Settings';
+import Mentors from './pages/Mentors';
+import BillingPage from './pages/BillingPage';
 
 // Onboarding Pages
 import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
@@ -40,6 +45,44 @@ function OnboardingRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, user } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user && user.onboardingCompleted) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+// Role-aware dashboard index: renders MentorDashboard for mentors, student Dashboard otherwise
+function DashboardIndex() {
+  const { user } = useAuthStore();
+  if (user?.role === 'mentor') {
+    return <MentorDashboard />;
+  }
+  return <Dashboard />;
+}
+
+// Guards student-only routes from mentors
+function StudentRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (user && user.role === 'mentor') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+// Guards mentor-only routes from students
+function MentorRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (user && user.role !== 'mentor') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+// Guards the Mentor Section route for students. Mentors are kept out.
+// Non-Pro/Agency students are allowed through so the Mentors page can render
+// the locked state with the "Upgrade Now" CTA.
+function MentorSectionRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (user && user.role !== 'student') {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
@@ -119,14 +162,19 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
-          <Route path="profile-setup" element={<ProfileSetup />} />
-          <Route path="roadmaps" element={<RoadmapGenerator />} />
-          <Route path="roadmaps/:id" element={<RoadmapDetail />} />
-          <Route path="interviews" element={<MockInterview />} />
-          <Route path="interviews/:id" element={<InterviewSession />} />
-          <Route path="leaderboard" element={<Leaderboard />} />
-          <Route path="settings" element={<Settings />} />
+          <Route index element={<DashboardIndex />} />
+          <Route path="profile-setup" element={<StudentRoute><ProfileSetup /></StudentRoute>} />
+          <Route path="roadmaps" element={<StudentRoute><RoadmapGenerator /></StudentRoute>} />
+          <Route path="roadmaps/:id" element={<StudentRoute><RoadmapDetail /></StudentRoute>} />
+          <Route path="interviews" element={<StudentRoute><MockInterview /></StudentRoute>} />
+          <Route path="interviews/:id" element={<StudentRoute><InterviewSession /></StudentRoute>} />
+<Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
+          <Route path="mentors" element={<MentorSectionRoute><Mentors /></MentorSectionRoute>} />
+          <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
+          <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />
+          <Route path="sessions" element={<MentorRoute><MentorSessions /></MentorRoute>} />
+<Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="settings" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
         <Route

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../lib/api';
@@ -6,71 +6,114 @@ import {
   BotMessageSquare,
   Play,
   Clock,
-  Trophy,
   ChevronRight,
   Sparkles,
   Loader2,
   BrainCircuit,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PlanUsageBanner from '../../components/billing/PlanUsageBanner';
+import { usePlanUsage } from '../../hooks/usePlanUsage';
 
+// ------------------------------------------------------------------
+// Types
+// ------------------------------------------------------------------
 interface Interview {
   _id: string;
   role: string;
   type: string;
   status: string;
   totalScore: number;
-  questions: any[];
+  questions: Question[];
   createdAt: string;
+}
+
+interface Question {
+  _id: string;
+  question: string;
+  questionType?: string;
+  difficulty?: string;
+  status?: string;
+  questionNumber?: number;
+  userAnswer?: string;
+  score?: number;
+  answered?: boolean;
+}
+
+type ExperienceLevel = 'entry' | 'mid' | 'senior' | 'lead';
+type InterviewType = 'technical' | 'behavioral' | 'mixed' | 'system-design';
+type Duration = 1 | 5 | 10 | 15 | 20 | 30;
+
+interface StartFormData {
+  role: string;
+  experience: ExperienceLevel;
+  type: InterviewType;
+  duration: Duration;
 }
 
 export default function MockInterview() {
   const navigate = useNavigate();
+  const { usage, refetch: refetchUsage } = usePlanUsage();
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [showStartForm, setShowStartForm] = useState(false);
   const [starting, setStarting] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<StartFormData>({
     role: '',
-    experience: 'mid' as 'entry' | 'mid' | 'senior' | 'lead',
-    type: 'mixed' as 'technical' | 'behavioral' | 'mixed' | 'system-design',
-    duration: 30,
+    experience: 'mid',
+    type: 'mixed',
+    duration: 10,
   });
 
-  useEffect(() => {
-    fetchInterviews();
-  }, []);
-
-  const fetchInterviews = async () => {
+  // Memoized fetch function
+  const fetchInterviews = useCallback(async () => {
     try {
       const { data } = await api.get('/interviews');
-      setInterviews(data.interviews || []);
+      setInterviews(data.interviews ?? []);
     } catch (error) {
       console.error('Failed to fetch interviews:', error);
+      toast.error('Could not load interviews');
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  // Initial fetch + refetch on window focus (e.g., returning from an interview)
+  useEffect(() => {
+    fetchInterviews();
+    const handleFocus = () => fetchInterviews();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchInterviews]);
 
   const startInterview = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.role.trim()) {
+      toast.error('Please enter a target role');
+      return;
+    }
     setStarting(true);
     try {
       const { data } = await api.post('/interviews/start', formData);
+      refetchUsage();
       navigate(`/dashboard/interviews/${data.interview._id}`);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to start interview');
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to start interview';
+      toast.error(message);
     } finally {
       setStarting(false);
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed': return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
-      case 'in-progress': return 'text-amber-500 bg-amber-50 dark:bg-amber-500/10';
-      default: return 'text-gray-500 bg-gray-50 dark:bg-gray-500/10';
-    }
+    if (status === 'completed')
+      return 'text-emerald-500 bg-emerald-50 dark:bg-emerald-500/10';
+    if (status === 'in-progress')
+      return 'text-amber-500 bg-amber-50 dark:bg-amber-500/10';
+    return 'text-gray-500 bg-gray-50 dark:bg-gray-500/10';
   };
 
   const getScoreColor = (score: number) => {
@@ -78,6 +121,11 @@ export default function MockInterview() {
     if (score >= 60) return 'text-amber-500';
     return 'text-red-500';
   };
+
+  const interviewAtLimit =
+    usage !== null &&
+    usage.limits.interviewsPerMonth !== null &&
+    usage.usage.interviews >= usage.limits.interviewsPerMonth;
 
   if (loading) {
     return (
@@ -89,15 +137,22 @@ export default function MockInterview() {
 
   return (
     <div className="space-y-8">
+      {usage && <PlanUsageBanner usage={usage} highlight="interviews" />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Mock Interviews</h1>
-          <p className="text-gray-500 dark:text-gray-400">Practice with realistic AI-powered interviews</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            AI Mock Interviews
+          </h1>
+          <p className="text-gray-500 dark:text-gray-400">
+            Practice with realistic AI-powered interviews
+          </p>
         </div>
         <button
           onClick={() => setShowStartForm(!showStartForm)}
-          className="btn-primary flex items-center gap-2"
+          disabled={interviewAtLimit}
+          className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Play className="w-4 h-4" />
           {showStartForm ? 'Cancel' : 'Start Interview'}
@@ -118,17 +173,26 @@ export default function MockInterview() {
                 <input
                   type="text"
                   value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
                   className="input-field"
                   placeholder="e.g., Frontend Engineer"
                   required
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Experience Level</label>
+                <label className="block text-sm font-medium mb-2">
+                  Experience Level
+                </label>
                 <select
                   value={formData.experience}
-                  onChange={(e) => setFormData({ ...formData, experience: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      experience: e.target.value as ExperienceLevel,
+                    })
+                  }
                   className="input-field"
                 >
                   <option value="entry">Entry Level</option>
@@ -138,10 +202,17 @@ export default function MockInterview() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Interview Type</label>
+                <label className="block text-sm font-medium mb-2">
+                  Interview Type
+                </label>
                 <select
                   value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      type: e.target.value as InterviewType,
+                    })
+                  }
                   className="input-field"
                 >
                   <option value="mixed">Mixed</option>
@@ -151,23 +222,32 @@ export default function MockInterview() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Duration (minutes)</label>
+                <label className="block text-sm font-medium mb-2">
+                  Duration (minutes)
+                </label>
                 <select
                   value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) })}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      duration: Number(e.target.value) as Duration,
+                    })
+                  }
                   className="input-field"
                 >
+                  <option value={1}>1 min</option>
+                  <option value={5}>5 min</option>
+                  <option value={10}>10 min</option>
                   <option value={15}>15 min</option>
+                  <option value={20}>20 min</option>
                   <option value={30}>30 min</option>
-                  <option value={45}>45 min</option>
-                  <option value={60}>60 min</option>
                 </select>
               </div>
             </div>
             <button
               type="submit"
-              disabled={starting}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={starting || interviewAtLimit}
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {starting ? (
                 <>
@@ -210,16 +290,31 @@ export default function MockInterview() {
                     <span>{interview.type}</span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
-                      {interview.questions?.length || 0} questions
+                      {interview.questions?.length ?? 0} questions
                     </span>
                   </div>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <div className={`text-xl font-bold ${getScoreColor(interview.totalScore)}`}>
-                    {interview.totalScore || '-'}
+                  <div
+                    className={`text-xl font-bold ${getScoreColor(
+                      interview.totalScore
+                    )}`}
+                  >
+                    {/* Show 0 instead of dash when score is exactly 0 */}
+                    {interview.totalScore != null
+                      ? interview.totalScore
+                      : '-'}
                   </div>
-                  <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(interview.status)}`}>
-                    {interview.status}
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(
+                      interview.status
+                    )}`}
+                  >
+                    {interview.status === 'in-progress'
+                      ? 'In Progress'
+                      : interview.status === 'completed'
+                        ? 'Completed'
+                        : interview.status}
                   </span>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform" />
@@ -232,13 +327,17 @@ export default function MockInterview() {
           <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-500/10 dark:to-teal-500/10 flex items-center justify-center">
             <BrainCircuit className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">No Interviews Yet</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
+            No Interviews Yet
+          </h2>
           <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md mx-auto">
-            Start your first AI-powered mock interview to practice with realistic questions and get detailed feedback.
+            Start your first AI-powered mock interview to practice with
+            realistic questions and get detailed feedback.
           </p>
           <button
             onClick={() => setShowStartForm(true)}
-            className="btn-primary inline-flex items-center gap-2"
+            disabled={interviewAtLimit}
+            className="btn-primary inline-flex items-center gap-2 disabled:opacity-60"
           >
             <Play className="w-5 h-5" />
             Start Your First Interview
@@ -248,4 +347,3 @@ export default function MockInterview() {
     </div>
   );
 }
-

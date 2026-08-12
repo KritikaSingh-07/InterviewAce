@@ -31,6 +31,19 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin', 'student', 'mentor'],
       default: 'user',
     },
+    plan: {
+      type: String,
+      enum: ['free', 'starter', 'pro', 'agency'],
+      default: 'free',
+    },
+    planStartedAt: {
+      type: Date,
+      default: null,
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
     isProfileComplete: {
       type: Boolean,
       default: false,
@@ -72,6 +85,26 @@ userSchema.pre('save', async function (next) {
 userSchema.methods.comparePassword = async function (candidatePassword) {
   return await bcrypt.compare(candidatePassword, this.password);
 };
+
+// Virtuals for populate() support.
+// The leaderboard and mentor controllers populate these paths on the User model.
+userSchema.virtual('profile', {
+  ref: 'Profile',
+  localField: '_id',
+  foreignField: 'user',
+  justOne: true,
+});
+
+userSchema.virtual('studentProfile', {
+  ref: 'StudentProfile',
+  localField: '_id',
+  foreignField: 'userId',
+  justOne: true,
+});
+
+// // Include virtuals in JSON/object serialization
+// userSchema.set('toJSON', { virtuals: true });
+// userSchema.set('toObject', { virtuals: true });
 
 const User = mongoose.model('User', userSchema);
 export default User;

@@ -8,13 +8,6 @@ const getGlobalLeaderboard = async (req, res, next) => {
 
     const leaders = await Leaderboard.find()
       .populate('user', 'email')
-      .populate({
-        path: 'user',
-        populate: {
-          path: 'profile',
-          select: 'fullName avatar',
-        },
-      })
       .sort({ totalPoints: -1 })
       .skip(skip)
       .limit(limit)
@@ -49,13 +42,6 @@ const getWeeklyLeaderboard = async (req, res, next) => {
   try {
     const leaders = await Leaderboard.find({ weeklyPoints: { $gt: 0 } })
       .populate('user', 'email')
-      .populate({
-        path: 'user',
-        populate: {
-          path: 'profile',
-          select: 'fullName avatar',
-        },
-      })
       .sort({ weeklyPoints: -1 })
       .limit(100)
       .lean();
@@ -77,20 +63,11 @@ const getWeeklyLeaderboard = async (req, res, next) => {
 // @access  Private
 const getMyStats = async (req, res, next) => {
   try {
-    let leaderboard = await Leaderboard.findOne({ user: req.user._id }).populate({
-      path: 'user',
-      populate: {
-        path: 'profile',
-        select: 'fullName avatar',
-      },
-    });
+    let leaderboard = await Leaderboard.findOne({ user: req.user._id }).populate('user', 'email');
 
     if (!leaderboard) {
       leaderboard = await Leaderboard.create({ user: req.user._id });
-      leaderboard = await Leaderboard.findById(leaderboard._id).populate({
-        path: 'user',
-        populate: { path: 'profile', select: 'fullName avatar' },
-      });
+      leaderboard = await Leaderboard.findById(leaderboard._id).populate('user', 'email');
     }
 
     // Calculate global rank
@@ -112,4 +89,3 @@ const getMyStats = async (req, res, next) => {
 };
 
 export { getGlobalLeaderboard, getWeeklyLeaderboard, getMyStats };
-

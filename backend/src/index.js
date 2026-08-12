@@ -17,6 +17,10 @@ import userRoutes from './routes/userRoutes.js';
 import studentProfileRoutes from './routes/studentProfileRoutes.js';
 import mentorProfileRoutes from './routes/mentorProfileRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import mentorRoutes from './routes/mentorRoutes.js';
+import mentorSectionRoutes from './routes/mentorSectionRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
+import { handleWebhook } from './controllers/paymentController.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -33,11 +37,18 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 1000,
   message: { error: 'Too many requests, please try again later.' },
 });
 app.use('/api/', limiter);
+
+// Razorpay webhook must receive raw body for signature verification
+app.post(
+  '/api/payments/webhook',
+  express.raw({ type: 'application/json' }),
+  handleWebhook
+);
 
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
@@ -56,6 +67,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/student-profile', studentProfileRoutes);
 app.use('/api/mentor-profile', mentorProfileRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/mentor', mentorRoutes);
+app.use('/api/mentors', mentorSectionRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
