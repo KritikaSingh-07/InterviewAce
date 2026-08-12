@@ -28,23 +28,19 @@ import {
 interface Question {
   _id: string;
   question: string;
-  questionType?: string;
+  questionType: string;
   difficulty?: string;
   status?: string;
   questionNumber?: number;
   userAnswer?: string;
   score?: number;
   maxScore?: number;
-  aiFeedback?: {
-    strengths?: string[];
-    missingKeywords?: string[];
-    overallFeedback?: string;
-  };
+  aiFeedback?: any;
   duration?: number;
   answeredAt?: string;
 }
 
-interface DynamicInterview extends MockInterview {
+interface DynamicInterview extends Omit<MockInterview, 'questions'> {
   currentDifficulty?: string;
   totalQuestionsAsked?: number;
   expiresAt?: string;
@@ -126,10 +122,6 @@ export default function InterviewSession() {
         ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
         : "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
     : "";
-
-  /* ================================================================ */
-  /*  Fetch interview                                                 */
-  /* ================================================================ */
   const fetchInterview = useCallback(async () => {
     try {
       setLoading(true);
@@ -137,9 +129,9 @@ export default function InterviewSession() {
       const fetched: DynamicInterview = data.interview;
       setInterview(fetched);
 
-      if (fetched.status === "in-progress") {
+      if (fetched.status === "in-progress" && fetched.startedAt) {
         const started = new Date(fetched.startedAt).getTime();
-        const totalSecs = fetched.duration * 60;
+        const totalSecs = (fetched.duration || 10) * 60;
         const elapsed = Math.floor((Date.now() - started) / 1000);
         const left = Math.max(totalSecs - elapsed, 0);
         setRemainingSeconds(left);
@@ -148,12 +140,12 @@ export default function InterviewSession() {
       }
 
       const unansweredIndex = fetched.questions.findIndex(
-        (q) => q.status !== "answered"
+        (q) => q.status !== "answered" && !q.userAnswer
       );
       setCurrentQIndex(unansweredIndex >= 0 ? unansweredIndex : 0);
       questionStartTimeRef.current = Date.now();
     } catch (err: any) {
-      toast.error(err.response?.data?.message || "Unable to load interview");
+      toast.error(err.response?.data?.message || err.response?.data?.error || "Unable to load interview");
     } finally {
       setLoading(false);
     }
@@ -167,17 +159,18 @@ export default function InterviewSession() {
   /*  Timer effect                                                    */
   /* ================================================================ */
   useEffect(() => {
-    if (!interview || interview.status !== "in-progress") return;
+    if (!interview || interview.status !== "in-progress" || !interview.startedAt) return;
 
     const updateTimer = () => {
-      const started = new Date(interview.startedAt).getTime();
-      const totalSecs = interview.duration * 60;
+      const started = new Date(interview.startedAt!).getTime();
+      const totalSecs = (interview.duration || 10) * 60;
       const elapsed = Math.floor((Date.now() - started) / 1000);
       const left = Math.max(totalSecs - elapsed, 0);
       setRemainingSeconds(left);
 
       if (left <= 0 && !hasFinishedRef.current) {
         hasFinishedRef.current = true;
+        toast.error('Time limit reached! Completing interview...');
         finishInterview();
       }
     };
@@ -785,7 +778,7 @@ export default function InterviewSession() {
                     ` (${currentQuestion.maxScore} pts)`}
                 </span>
               )}
-              <span className="flex items-center gap-1">
+              <span className={`flex items-center gap-1 font-mono font-semibold ${remainingSeconds < 60 ? 'text-red-500 animate-pulse' : 'text-indigo-600 dark:text-indigo-400'}`}>
                 <Clock className="w-4 h-4" /> {formatTime(remainingSeconds)} left
               </span>
             </span>
