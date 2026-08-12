@@ -18,24 +18,130 @@ import {
   MessageSquare,
   TrendingUp,
   Award,
+<<<<<<< Updated upstream
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+=======
+} from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                             */
+/* ------------------------------------------------------------------ */
+interface Question {
+  _id: string;
+  question: string;
+  questionType: string;
+  difficulty?: string;
+  status?: string;          // "answered" | "pending"
+  questionNumber?: number;
+  userAnswer?: string;
+  score?: number;
+  aiFeedback?: {
+    strengths?: string[];
+    missingKeywords?: string[];
+    overallFeedback?: string;
+  };
+  duration?: number;
+  answeredAt?: string;
+}
+
+interface DynamicInterview extends Omit<MockInterview, 'questions'> {
+  currentDifficulty?: string;
+  totalQuestionsAsked?: number;
+  expiresAt?: string;
+  questions: Question[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Speech recognition types                                          */
+/* ------------------------------------------------------------------ */
+interface SpeechRecognitionEvent extends Event {
+  resultIndex: number;
+  results: SpeechRecognitionResultList;
+}
+interface SpeechRecognitionErrorEvent extends Event {
+  error: string;
+}
+interface SpeechRecognition extends EventTarget {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start(): void;
+  stop(): void;
+  onresult: ((event: SpeechRecognitionEvent) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
+  onend: (() => void) | null;
+}
+>>>>>>> Stashed changes
 
 export default function InterviewSession() {
   const { id } = useParams<{ id: string }>();
   const [interview, setInterview] = useState<MockInterview | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQIndex, setCurrentQIndex] = useState(0);
+<<<<<<< Updated upstream
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const answerRef = useRef<HTMLTextAreaElement>(null);
+=======
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+
+  /* ---------- refs ---------- */
+  const hasFinishedRef = useRef(false);
+  const isSubmittingRef = useRef(false);
+  const questionStartTimeRef = useRef(Date.now());
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const isRecognizingRef = useRef(false);
+  const finalTranscriptRef = useRef("");
+
+  /* ================================================================ */
+  /*  Fetch interview (resume from correct question)                  */
+  /* ================================================================ */
+  const fetchInterview = useCallback(async () => {
+    try {
+      setLoading(true);
+      const { data } = await api.get(`/interviews/${id}`);
+      const fetched: DynamicInterview = data.interview;
+      setInterview(fetched);
+      document.title = `${fetched.role} Interview | InterviewAce`;
+
+      if (fetched.status === "in-progress" && fetched.startedAt) {
+        const started = new Date(fetched.startedAt).getTime();
+        const totalSecs = fetched.duration * 60;
+        const elapsed = Math.floor((Date.now() - started) / 1000);
+        const left = Math.max(totalSecs - elapsed, 0);
+        setRemainingSeconds(left);
+      } else {
+        setRemainingSeconds(fetched.duration * 60);
+      }
+
+      // ✅ Use status field to find the first unanswered question
+      const unansweredIndex = fetched.questions.findIndex(
+        (q) => q.status !== "answered"
+      );
+      setCurrentQIndex(unansweredIndex >= 0 ? unansweredIndex : 0);
+
+      questionStartTimeRef.current = Date.now();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Unable to load interview");
+    } finally {
+      setLoading(false);
+    }
+  }, [id]);
+>>>>>>> Stashed changes
+
+  // Reset title on unmount
+  useEffect(() => {
+    return () => { document.title = 'InterviewAce'; };
+  }, []);
 
   useEffect(() => {
     fetchInterview();
   }, [id]);
 
+<<<<<<< Updated upstream
   const fetchInterview = async () => {
     try {
       const { data } = await api.get(`/interviews/${id}`);
@@ -45,6 +151,36 @@ export default function InterviewSession() {
     } finally {
       setLoading(false);
     }
+=======
+  /* ================================================================ */
+  /*  Timer effect                                                    */
+  /* ================================================================ */
+  useEffect(() => {
+    if (!interview || interview.status !== "in-progress" || !interview.startedAt) return;
+
+    const updateTimer = () => {
+      const started = new Date(interview.startedAt!).getTime();
+      const totalSecs = interview.duration * 60;
+      const elapsed = Math.floor((Date.now() - started) / 1000);
+      const left = Math.max(totalSecs - elapsed, 0);
+      setRemainingSeconds(left);
+
+      if (left <= 0 && !hasFinishedRef.current) {
+        hasFinishedRef.current = true;
+        finishInterview();
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [interview]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+>>>>>>> Stashed changes
   };
 
   const submitAnswer = async () => {

@@ -1,6 +1,10 @@
 import MockInterview from '../models/MockInterview.js';
 import Leaderboard from '../models/Leaderboard.js';
 import { generateAIResponse } from '../config/ai.js';
+<<<<<<< Updated upstream
+=======
+import { createNotification } from './notificationController.js';
+>>>>>>> Stashed changes
 import {
   SYSTEM_PROMPTS,
   generateInterviewPrompt,
@@ -14,8 +18,57 @@ const startInterview = async (req, res, next) => {
     const { role, experience, type, duration } = req.body;
 
     // Generate initial questions using AI
+<<<<<<< Updated upstream
     const prompt = `Generate 5 ${type} interview questions for a ${experience}-level ${role} position. Return as JSON array with fields: question, questionType, difficulty.`;
 
+=======
+const prompt = `
+Generate exactly 5 interview questions.
+
+Role: ${role}
+Experience: ${experience}
+Interview Type: ${type}
+
+Return ONLY a valid JSON array.
+
+Each object MUST follow this schema:
+
+[
+  {
+    "question": "...",
+    "questionNumber": 1,
+    "questionType": "technical",
+    "difficulty": "easy"
+  }
+]
+
+Rules:
+
+questionType can ONLY be one of:
+
+technical
+behavioral
+coding
+system-design
+mixed
+
+Never output:
+Technical
+Behavioral
+Coding
+System Design
+Technical/Behavioral
+
+Difficulty can ONLY be:
+easy
+medium
+hard
+
+No markdown.
+No explanation.
+Only JSON.
+`;
+>>>>>>> Stashed changes
     const aiResponse = await generateAIResponse(
       prompt,
       SYSTEM_PROMPTS.INTERVIEW_QUESTION_GENERATOR
@@ -41,6 +94,7 @@ const startInterview = async (req, res, next) => {
       type,
       duration: duration || 30,
       status: 'in-progress',
+<<<<<<< Updated upstream
       questions: questions.map((q) => ({
         question: q.question,
         questionType: q.questionType || type,
@@ -48,6 +102,36 @@ const startInterview = async (req, res, next) => {
     });
 
     res.status(201).json({ interview });
+=======
+      startedAt: new Date(),
+      questions: questions.map((q, index) => ({
+        question: q.question,
+        questionNumber: q.questionNumber || index + 1,
+
+        questionType: (
+            q.questionType || type || "technical"
+        )
+            .toLowerCase()
+            .replace("system design", "system-design")
+            .replace("technical/behavioral", "mixed")
+            .trim(),
+
+        difficulty: (q.difficulty || "easy").toLowerCase(),
+      })),
+      
+    });
+
+    res.status(201).json({ interview });
+
+    createNotification({
+      userId: req.user._id,
+      type: 'interview_started',
+      title: '🎤 Interview Started!',
+      message: `Your ${type} interview for ${role} (${experience}-level) has started. Good luck!`,
+      referenceId: interview._id,
+      referenceModel: 'MockInterview',
+    });
+>>>>>>> Stashed changes
   } catch (error) {
     next(error);
   }
@@ -186,6 +270,18 @@ const completeInterview = async (req, res, next) => {
     await awardInterviewPoints(req.user._id, interview._id, totalScore);
 
     res.json({ interview });
+<<<<<<< Updated upstream
+=======
+
+    createNotification({
+      userId: req.user._id,
+      type: 'interview_completed',
+      title: 'Interview Completed! 🎉',
+      message: `You successfully completed your ${interview.role} interview with a score of ${interview.totalScore}/100.`,
+      referenceId: interview._id,
+      referenceModel: 'MockInterview',
+    });
+>>>>>>> Stashed changes
   } catch (error) {
     next(error);
   }

@@ -20,20 +20,49 @@ const taskSchema = new mongoose.Schema({
       url: String,
       type: {
         type: String,
-        enum: ['article', 'video', 'documentation', 'practice', 'quiz'],
+        enum: [
+          'article', 'video', 'documentation', 'practice', 'quiz',
+          'course', 'book', 'tutorial', 'tool', 'github', 'exercise',
+          'podcast', 'website', 'other',
+        ],
+        // Default unrecognized types to 'article'
+        set: (v) => [
+          'article','video','documentation','practice','quiz',
+          'course','book','tutorial','tool','github','exercise',
+          'podcast','website','other',
+        ].includes(v) ? v : 'article',
       },
     },
   ],
   practiceQuestions: [
     {
+      _id: { type: mongoose.Schema.Types.ObjectId, auto: true },
       question: String,
       type: {
         type: String,
-        enum: ['technical', 'behavioral', 'system-design'],
+        enum: ['technical', 'behavioral', 'system-design', 'system design', 'coding', 'conceptual', 'mixed'],
+        set: (v) => {
+          if (!v) return 'technical';
+          const s = v.toLowerCase().trim();
+          if (s.includes('behav')) return 'behavioral';
+          if (s.includes('system')) return 'system-design';
+          if (s.includes('cod')) return 'technical';
+          return ['technical','behavioral','system-design','system design','coding','conceptual','mixed'].includes(s) ? s : 'technical';
+        },
       },
       difficulty: {
         type: String,
         enum: ['easy', 'medium', 'hard'],
+        set: (v) => ['easy','medium','hard'].includes(v?.toLowerCase()) ? v.toLowerCase() : 'medium',
+      },
+      answered: { type: Boolean, default: false },
+      userAnswer: { type: String, default: '' },
+      score: { type: Number, default: 0 },
+      aiFeedback: {
+        idealAnswer: { type: String, default: '' },
+        explanation: { type: String, default: '' },
+        keyPoints: [String],
+        score: { type: Number, default: 0 },
       },
     },
   ],
@@ -51,6 +80,7 @@ const skillGapSchema = new mongoose.Schema({
   priority: {
     type: String,
     enum: ['low', 'medium', 'high', 'critical'],
+    set: (v) => ['low','medium','high','critical'].includes(v?.toLowerCase()) ? v.toLowerCase() : 'medium',
   },
   resources: [String],
 });

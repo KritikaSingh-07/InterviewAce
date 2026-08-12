@@ -1,7 +1,9 @@
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
+import api from '../../lib/api';
+import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -18,7 +20,20 @@ import {
   X,
   Bell,
   UserCircle2,
+  CheckCheck,
+  Sparkles,
+  BellOff,
+  CheckCircle2,
 } from 'lucide-react';
+
+interface NotificationItem {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  createdAt: string;
+}
 
 const sidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -32,15 +47,86 @@ export default function MainLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuthStore();
   const { isDarkMode, toggle } = useThemeStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const prevUnreadRef = useRef(0);
+  const prevIdsRef = useRef<Set<string>>(new Set());
+
+  const fetchNotifications = useCallback(async () => {
+    try {
+      const { data } = await api.get('/notifications');
+      const fetched: NotificationItem[] = data.notifications || [];
+      const newUnread: number = data.unreadCount || 0;
+
+      // Toast for any brand-new unread notification
+      fetched.forEach((n) => {
+        if (!n.read && !prevIdsRef.current.has(n._id)) {
+          toast(n.title, {
+            icon: '🔔',
+            duration: 4000,
+            style: { fontWeight: '600' },
+          });
+        }
+      });
+
+      prevIdsRef.current = new Set(fetched.map((n) => n._id));
+      prevUnreadRef.current = newUnread;
+      setNotifications(fetched);
+      setUnreadCount(newUnread);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchNotifications();
+    // Poll every 10 s so roadmap / interview notifications appear quickly
+    const interval = setInterval(fetchNotifications, 10000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await api.patch(`/notifications/${id}/read`);
+      setNotifications((prev) =>
+        prev.map((n) => (n._id === id ? { ...n, read: true } : n))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await api.patch('/notifications/read-all');
+      setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  const timeAgo = (dateStr: string) => {
+    const diffMs = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return 'just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         setDropdownOpen(false);
+        setNotifOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -180,7 +266,19 @@ export default function MainLayout() {
                 <Menu className="w-5 h-5" />
               </button>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                {location.pathname.split('/').pop()?.replace(/-/g, ' ') || 'Dashboard'}
+                {(() => {
+                  const segments = location.pathname.split('/').filter(Boolean);
+                  const last = segments[segments.length - 1];
+                  const secondLast = segments[segments.length - 2];
+                  // If the last segment looks like a MongoDB ObjectId (24 hex chars), show parent name instead
+                  const isId = /^[a-f0-9]{24}$/.test(last);
+                  if (isId) {
+                    if (secondLast === 'roadmaps') return 'Roadmap Detail';
+                    if (secondLast === 'interviews') return 'Interview Session';
+                    return secondLast?.replace(/-/g, ' ') || 'Detail';
+                  }
+                  return last?.replace(/-/g, ' ') || 'Dashboard';
+                })()}
               </h2>
             </div>
 
@@ -191,10 +289,111 @@ export default function MainLayout() {
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
-              <button className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-all relative">
-                <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setNotifOpen((o) => !o); }}
+                  className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-all relative"
+                >
+                  <Bell className="w-5 h-5" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {notifOpen && (
+                    <>
+                      {/* Invisible backdrop: click anywhere outside closes the panel */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setNotifOpen(false)}
+                      />
+                      <motion.div
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.15 }}
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 mt-2 w-80 max-h-96 rounded-xl bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-xl z-50 overflow-hidden flex flex-col"
+                      >
+                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                            Notifications
+                            {unreadCount > 0 && (
+                              <span className="text-xs font-bold bg-indigo-500 text-white rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center">
+                                {unreadCount}
+                              </span>
+                            )}
+                          </span>
+                          {unreadCount > 0 && (
+                            <button
+                              onClick={handleMarkAllAsRead}
+                              className="flex items-center gap-1 text-xs text-indigo-500 hover:text-indigo-400 font-medium"
+                            >
+                              <CheckCheck className="w-3.5 h-3.5" />
+                              Mark all read
+                            </button>
+                          )}
+                        </div>
+                        <div className="overflow-y-auto flex-1">
+                          {notifications.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-10 text-gray-400 dark:text-gray-600">
+                              <BellOff className="w-8 h-8 mb-2" />
+                              <p className="text-sm">No notifications yet</p>
+                            </div>
+                          ) : (
+                            notifications.map((n) => {
+                              const isRoadmap = n.type === 'roadmap_generated';
+                              const isInterview = n.type === 'interview_started' || n.type === 'interview_completed';
+                              return (
+                                <button
+                                  key={n._id}
+                                  onClick={() => !n.read && handleMarkAsRead(n._id)}
+                                  className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 ${
+                                    !n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
+                                  }`}
+                                >
+                                  <div className="mt-0.5 flex-shrink-0">
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                      n.read ? 'bg-gray-100 dark:bg-gray-800' : (
+                                        isRoadmap ? 'bg-violet-100 dark:bg-violet-500/20' :
+                                        isInterview ? 'bg-emerald-100 dark:bg-emerald-500/20' :
+                                        'bg-indigo-100 dark:bg-indigo-500/20'
+                                      )
+                                    }`}>
+                                      {isRoadmap ? (
+                                        <Route className={`w-4 h-4 ${n.read ? 'text-gray-400' : 'text-violet-500'}`} />
+                                      ) : isInterview ? (
+                                        <BotMessageSquare className={`w-4 h-4 ${n.read ? 'text-gray-400' : 'text-emerald-500'}`} />
+                                      ) : (
+                                        <Sparkles className={`w-4 h-4 ${n.read ? 'text-gray-400' : 'text-indigo-500'}`} />
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className={`text-sm ${!n.read ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-700 dark:text-gray-300'}`}>
+                                      {n.title}
+                                    </p>
+                                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">
+                                      {n.message}
+                                    </p>
+                                    <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-1">
+                                      {timeAgo(n.createdAt)}
+                                    </p>
+                                  </div>
+                                  {!n.read && (
+                                    <span className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5 animate-pulse" />
+                                  )}
+                                </button>
+                              );
+                            })
+                          )}
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
+              </div>
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}

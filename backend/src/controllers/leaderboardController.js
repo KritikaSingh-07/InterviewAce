@@ -1,8 +1,5 @@
 import Leaderboard from '../models/Leaderboard.js';
 
-// @desc    Get global leaderboard
-// @route   GET /api/leaderboard
-// @access  Public
 const getGlobalLeaderboard = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;

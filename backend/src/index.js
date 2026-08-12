@@ -16,6 +16,7 @@ import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import studentProfileRoutes from './routes/studentProfileRoutes.js';
 import mentorProfileRoutes from './routes/mentorProfileRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -54,6 +55,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/student-profile', studentProfileRoutes);
 app.use('/api/mentor-profile', mentorProfileRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

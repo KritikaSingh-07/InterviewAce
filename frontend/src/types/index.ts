@@ -125,9 +125,19 @@ export interface Resource {
 }
 
 export interface PracticeQuestion {
+  _id: string;
   question: string;
-  type: 'technical' | 'behavioral' | 'system-design';
+  type: 'technical' | 'behavioral' | 'system-design' | 'system design';
   difficulty: 'easy' | 'medium' | 'hard';
+  answered?: boolean;
+  userAnswer?: string;
+  score?: number;
+  aiFeedback?: {
+    idealAnswer: string;
+    explanation: string;
+    keyPoints: string[];
+    score: number;
+  };
 }
 
 // ==================== MOCK INTERVIEW ====================
@@ -143,6 +153,9 @@ export interface MockInterview {
   overallFeedback: FeedbackReport;
   totalScore: number;
   aiAnalysisComplete: boolean;
+  startedAt?: string;
+  completedAt?: string;
+  expiresAt?: string;
   createdAt: string;
 }
 
