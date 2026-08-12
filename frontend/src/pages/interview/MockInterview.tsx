@@ -12,6 +12,8 @@ import {
   BrainCircuit,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PlanUsageBanner from '../../components/billing/PlanUsageBanner';
+import { usePlanUsage } from '../../hooks/usePlanUsage';
 
 // ------------------------------------------------------------------
 // Types
@@ -51,6 +53,7 @@ interface StartFormData {
 
 export default function MockInterview() {
   const navigate = useNavigate();
+  const { usage, refetch: refetchUsage } = usePlanUsage();
   const [interviews, setInterviews] = useState<Interview[]>([]);
   const [loading, setLoading] = useState(true);
   const [showStartForm, setShowStartForm] = useState(false);
@@ -92,6 +95,7 @@ export default function MockInterview() {
     setStarting(true);
     try {
       const { data } = await api.post('/interviews/start', formData);
+      refetchUsage();
       navigate(`/dashboard/interviews/${data.interview._id}`);
     } catch (error: any) {
       const message =
@@ -118,6 +122,11 @@ export default function MockInterview() {
     return 'text-red-500';
   };
 
+  const interviewAtLimit =
+    usage !== null &&
+    usage.limits.interviewsPerMonth !== null &&
+    usage.usage.interviews >= usage.limits.interviewsPerMonth;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -128,6 +137,8 @@ export default function MockInterview() {
 
   return (
     <div className="space-y-8">
+      {usage && <PlanUsageBanner usage={usage} highlight="interviews" />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -140,7 +151,8 @@ export default function MockInterview() {
         </div>
         <button
           onClick={() => setShowStartForm(!showStartForm)}
-          className="btn-primary flex items-center gap-2"
+          disabled={interviewAtLimit}
+          className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Play className="w-4 h-4" />
           {showStartForm ? 'Cancel' : 'Start Interview'}
@@ -234,8 +246,8 @@ export default function MockInterview() {
             </div>
             <button
               type="submit"
-              disabled={starting}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={starting || interviewAtLimit}
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {starting ? (
                 <>
@@ -324,7 +336,8 @@ export default function MockInterview() {
           </p>
           <button
             onClick={() => setShowStartForm(true)}
-            className="btn-primary inline-flex items-center gap-2"
+            disabled={interviewAtLimit}
+            className="btn-primary inline-flex items-center gap-2 disabled:opacity-60"
           >
             <Play className="w-5 h-5" />
             Start Your First Interview

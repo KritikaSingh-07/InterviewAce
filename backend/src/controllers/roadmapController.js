@@ -2,12 +2,15 @@ import Roadmap from '../models/Roadmap.js';
 import Leaderboard from '../models/Leaderboard.js';
 import { generateAIResponses } from '../config/ai.js';
 import { SYSTEM_PROMPTS, generateRoadmapPrompt } from '../utils/aiPrompts.js';
+import { assertCanCreateRoadmap } from '../services/planLimitService.js';
 
 // @desc    Generate new AI roadmap
 // @route   POST /api/roadmaps/generate
 // @access  Private
 const generateRoadmap = async (req, res, next) => {
   try {
+    await assertCanCreateRoadmap(req.user);
+
     const { targetRole, careerBio, skills, duration } = req.body;
 
     const prompt = generateRoadmapPrompt({

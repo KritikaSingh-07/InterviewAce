@@ -6,6 +6,7 @@ import {
   generateOverallFeedback,
   calculateNextDifficulty,
 } from "../services/interviewService.js";
+import { assertCanStartInterview } from "../services/planLimitService.js";
 
 // ======================================================
 // @desc Start Interview
@@ -13,6 +14,8 @@ import {
 // ======================================================
 const startInterview = async (req, res, next) => {
   try {
+    await assertCanStartInterview(req.user);
+
     const { role, experience, type, duration } = req.body;
 
     const interviewDuration = duration || 10;

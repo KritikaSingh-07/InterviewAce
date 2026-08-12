@@ -31,6 +31,19 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin', 'student', 'mentor'],
       default: 'user',
     },
+    plan: {
+      type: String,
+      enum: ['free', 'starter', 'pro', 'agency'],
+      default: 'free',
+    },
+    planStartedAt: {
+      type: Date,
+      default: null,
+    },
+    planExpiresAt: {
+      type: Date,
+      default: null,
+    },
     isProfileComplete: {
       type: Boolean,
       default: false,

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { Eye, EyeOff, LogIn, Mail, Lock, ArrowRight } from 'lucide-react';
@@ -11,12 +11,23 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { login, isLoading } = useAuthStore();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       await login(email, password);
       toast.success('Welcome back!');
+
+      const checkoutPlan = sessionStorage.getItem('checkoutPlan');
+      const redirectPlan = (location.state as { plan?: string } | null)?.plan;
+
+      if (checkoutPlan || redirectPlan) {
+        sessionStorage.removeItem('checkoutPlan');
+        navigate('/#pricing');
+        return;
+      }
+
       navigate('/dashboard');
     } catch (error: any) {
       toast.error(error.message || 'Login failed');

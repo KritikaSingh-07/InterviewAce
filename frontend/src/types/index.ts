@@ -1,8 +1,15 @@
 // ==================== USER & AUTH ====================
+// Pricing tiers. "Model Pro" maps to 'pro'.
+export type Plan = 'free' | 'starter' | 'pro' | 'agency';
+export type PaidPlan = Exclude<Plan, 'free'>;
+
 export interface User {
   id: string;
   email: string;
   role: 'user' | 'admin' | 'student' | 'mentor';
+  plan?: Plan;
+  planStartedAt?: string | null;
+  planExpiresAt?: string | null;
   isProfileComplete: boolean;
   onboardingCompleted: boolean;
   profileImage?: string | null;
@@ -68,8 +75,38 @@ export interface AuthResponse {
     id: string;
     email: string;
     role: string;
+    plan?: Plan;
     isProfileComplete: boolean;
+    onboardingCompleted?: boolean;
+    profileImage?: string | null;
+    profileImagePublicId?: string | null;
   };
+}
+
+// ==================== PAYMENTS ====================
+export interface PaymentOrderResponse {
+  orderId: string;
+  amount: number;
+  currency: string;
+  keyId: string;
+  plan: PaidPlan;
+  planName: string;
+  user: {
+    email: string;
+    name: string;
+  };
+}
+
+export interface PaymentRecord {
+  _id: string;
+  plan: PaidPlan;
+  orderId: string;
+  paymentId?: string | null;
+  invoiceId?: string | null;
+  amount: number;
+  currency: string;
+  status: 'created' | 'paid' | 'failed';
+  createdAt: string;
 }
 
 // ==================== ROADMAP ====================
@@ -288,6 +325,58 @@ export interface MentorInterviewFormData {
   scheduledAt: string;
   duration: number;
   type: string;
+}
+
+// ==================== MENTOR SECTION ====================
+export interface MentorCard {
+  _id: string;
+  email: string;
+  profileImage?: string | null;
+  fullName: string;
+  company: string;
+  designation: string;
+  experience: number;
+  skills: string[];
+  linkedin: string;
+  bio: string;
+}
+
+export interface InterviewRequest {
+  _id: string;
+  student: string;
+  mentor: {
+    _id: string;
+    email: string;
+    profileImage?: string | null;
+  } | string;
+  targetRole: string;
+  bio: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MentorRequestFormData {
+  mentorId: string;
+  targetRole: string;
+  bio: string;
+}
+
+export interface PlanUsageSummary {
+  plan: Plan;
+  limits: {
+    roadmapsPerMonth: number | null;
+    interviewsPerMonth: number | null;
+  };
+  usage: {
+    roadmaps: number;
+    interviews: number;
+  };
+  remaining: {
+    roadmaps: number | null;
+    interviews: number | null;
+  };
+  periodStart: string;
 }
 
 // ==================== API TYPES ====================

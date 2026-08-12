@@ -23,7 +23,8 @@ import RoadmapDetail from './pages/roadmap/RoadmapDetail';
 import MockInterview from './pages/interview/MockInterview';
 import InterviewSession from './pages/interview/InterviewSession';
 import Leaderboard from './pages/Leaderboard';
-import Settings from './pages/Settings';
+import Mentors from './pages/Mentors';
+import BillingPage from './pages/BillingPage';
 
 // Onboarding Pages
 import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
@@ -71,6 +72,17 @@ function StudentRoute({ children }: { children: React.ReactNode }) {
 function MentorRoute({ children }: { children: React.ReactNode }) {
   const { user } = useAuthStore();
   if (user && user.role !== 'mentor') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
+// Guards the Mentor Section route for students. Mentors are kept out.
+// Non-Pro/Agency students are allowed through so the Mentors page can render
+// the locked state with the "Upgrade Now" CTA.
+function MentorSectionRoute({ children }: { children: React.ReactNode }) {
+  const { user } = useAuthStore();
+  if (user && user.role !== 'student') {
     return <Navigate to="/dashboard" replace />;
   }
   return <>{children}</>;
@@ -156,11 +168,13 @@ function App() {
           <Route path="roadmaps/:id" element={<StudentRoute><RoadmapDetail /></StudentRoute>} />
           <Route path="interviews" element={<StudentRoute><MockInterview /></StudentRoute>} />
           <Route path="interviews/:id" element={<StudentRoute><InterviewSession /></StudentRoute>} />
-          <Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
+<Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
+          <Route path="mentors" element={<MentorSectionRoute><Mentors /></MentorSectionRoute>} />
+          <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
           <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />
           <Route path="sessions" element={<MentorRoute><MentorSessions /></MentorRoute>} />
-          <Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
-          <Route path="settings" element={<Settings />} />
+<Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="settings" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
         <Route

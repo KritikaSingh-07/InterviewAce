@@ -14,6 +14,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PlanUsageBanner from '../../components/billing/PlanUsageBanner';
+import { usePlanUsage } from '../../hooks/usePlanUsage';
 
 interface Roadmap {
   _id: string;
@@ -26,6 +28,7 @@ interface Roadmap {
 
 export default function RoadmapGenerator() {
   const navigate = useNavigate();
+  const { usage, refetch: refetchUsage } = usePlanUsage();
   const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -63,6 +66,7 @@ export default function RoadmapGenerator() {
         duration: formData.duration,
       });
       toast.success('Roadmap generated successfully!');
+      refetchUsage();
       navigate(`/dashboard/roadmaps/${data.roadmap._id}`);
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to generate roadmap');
@@ -80,6 +84,11 @@ export default function RoadmapGenerator() {
     }
   };
 
+  const roadmapAtLimit =
+    usage !== null &&
+    usage.limits.roadmapsPerMonth !== null &&
+    usage.usage.roadmaps >= usage.limits.roadmapsPerMonth;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -90,6 +99,8 @@ export default function RoadmapGenerator() {
 
   return (
     <div className="space-y-8">
+      {usage && <PlanUsageBanner usage={usage} highlight="roadmaps" />}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -98,7 +109,8 @@ export default function RoadmapGenerator() {
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="btn-primary flex items-center gap-2"
+          disabled={roadmapAtLimit}
+          className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Zap className="w-4 h-4" />
           {showForm ? 'Cancel' : 'New Roadmap'}
@@ -159,8 +171,8 @@ export default function RoadmapGenerator() {
             </div>
             <button
               type="submit"
-              disabled={generating}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              disabled={generating || roadmapAtLimit}
+              className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
             >
               {generating ? (
                 <>
@@ -241,7 +253,8 @@ export default function RoadmapGenerator() {
           </p>
           <button
             onClick={() => setShowForm(true)}
-            className="btn-primary inline-flex items-center gap-2"
+            disabled={roadmapAtLimit}
+            className="btn-primary inline-flex items-center gap-2 disabled:opacity-60"
           >
             <Sparkles className="w-5 h-5" />
             Generate Your First Roadmap
