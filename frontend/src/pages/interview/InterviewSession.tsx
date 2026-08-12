@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import api from '../../lib/api';
@@ -18,156 +18,75 @@ import {
   MessageSquare,
   TrendingUp,
   Award,
-<<<<<<< Updated upstream
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-=======
-} from "lucide-react";
-
-/* ------------------------------------------------------------------ */
-/*  Types                                                             */
-/* ------------------------------------------------------------------ */
-interface Question {
-  _id: string;
-  question: string;
-  questionType: string;
-  difficulty?: string;
-  status?: string;          // "answered" | "pending"
-  questionNumber?: number;
-  userAnswer?: string;
-  score?: number;
-  aiFeedback?: {
-    strengths?: string[];
-    missingKeywords?: string[];
-    overallFeedback?: string;
-  };
-  duration?: number;
-  answeredAt?: string;
-}
-
-interface DynamicInterview extends Omit<MockInterview, 'questions'> {
-  currentDifficulty?: string;
-  totalQuestionsAsked?: number;
-  expiresAt?: string;
-  questions: Question[];
-}
-
-/* ------------------------------------------------------------------ */
-/*  Speech recognition types                                          */
-/* ------------------------------------------------------------------ */
-interface SpeechRecognitionEvent extends Event {
-  resultIndex: number;
-  results: SpeechRecognitionResultList;
-}
-interface SpeechRecognitionErrorEvent extends Event {
-  error: string;
-}
-interface SpeechRecognition extends EventTarget {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  start(): void;
-  stop(): void;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-}
->>>>>>> Stashed changes
 
 export default function InterviewSession() {
   const { id } = useParams<{ id: string }>();
   const [interview, setInterview] = useState<MockInterview | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentQIndex, setCurrentQIndex] = useState(0);
-<<<<<<< Updated upstream
   const [answer, setAnswer] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [completing, setCompleting] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const answerRef = useRef<HTMLTextAreaElement>(null);
-=======
   const [remainingSeconds, setRemainingSeconds] = useState(0);
 
-  /* ---------- refs ---------- */
+  const answerRef = useRef<HTMLTextAreaElement>(null);
   const hasFinishedRef = useRef(false);
-  const isSubmittingRef = useRef(false);
-  const questionStartTimeRef = useRef(Date.now());
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
-  const isRecognizingRef = useRef(false);
-  const finalTranscriptRef = useRef("");
 
-  /* ================================================================ */
-  /*  Fetch interview (resume from correct question)                  */
-  /* ================================================================ */
+  /* ── Fetch interview & auto-resume unanswered question ────────────────── */
   const fetchInterview = useCallback(async () => {
     try {
       setLoading(true);
       const { data } = await api.get(`/interviews/${id}`);
-      const fetched: DynamicInterview = data.interview;
+      const fetched: MockInterview = data.interview;
       setInterview(fetched);
-      document.title = `${fetched.role} Interview | InterviewAce`;
 
-      if (fetched.status === "in-progress" && fetched.startedAt) {
+      // Auto-resume: jump to first unanswered question if interview is in-progress
+      if (fetched.questions && fetched.questions.length > 0) {
+        const firstUnansweredIndex = fetched.questions.findIndex(
+          (q) => !q.userAnswer
+        );
+        setCurrentQIndex(firstUnansweredIndex >= 0 ? firstUnansweredIndex : 0);
+      }
+
+      // Calculate initial timer countdown
+      if (fetched.status === 'in-progress' && fetched.startedAt) {
         const started = new Date(fetched.startedAt).getTime();
-        const totalSecs = fetched.duration * 60;
+        const totalSecs = (fetched.duration || 30) * 60;
         const elapsed = Math.floor((Date.now() - started) / 1000);
         const left = Math.max(totalSecs - elapsed, 0);
         setRemainingSeconds(left);
-      } else {
+      } else if (fetched.duration) {
         setRemainingSeconds(fetched.duration * 60);
       }
-
-      // ✅ Use status field to find the first unanswered question
-      const unansweredIndex = fetched.questions.findIndex(
-        (q) => q.status !== "answered"
-      );
-      setCurrentQIndex(unansweredIndex >= 0 ? unansweredIndex : 0);
-
-      questionStartTimeRef.current = Date.now();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Unable to load interview");
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || 'Failed to load interview');
     } finally {
       setLoading(false);
     }
   }, [id]);
->>>>>>> Stashed changes
-
-  // Reset title on unmount
-  useEffect(() => {
-    return () => { document.title = 'InterviewAce'; };
-  }, []);
 
   useEffect(() => {
     fetchInterview();
-  }, [id]);
+  }, [fetchInterview]);
 
-<<<<<<< Updated upstream
-  const fetchInterview = async () => {
-    try {
-      const { data } = await api.get(`/interviews/${id}`);
-      setInterview(data.interview);
-    } catch (error) {
-      toast.error('Failed to load interview');
-    } finally {
-      setLoading(false);
-    }
-=======
-  /* ================================================================ */
-  /*  Timer effect                                                    */
-  /* ================================================================ */
+  /* ── Timer countdown effect ────────────────────────────────────────────── */
   useEffect(() => {
-    if (!interview || interview.status !== "in-progress" || !interview.startedAt) return;
+    if (!interview || interview.status !== 'in-progress' || !interview.startedAt) return;
 
     const updateTimer = () => {
       const started = new Date(interview.startedAt!).getTime();
-      const totalSecs = interview.duration * 60;
+      const totalSecs = (interview.duration || 30) * 60;
       const elapsed = Math.floor((Date.now() - started) / 1000);
       const left = Math.max(totalSecs - elapsed, 0);
       setRemainingSeconds(left);
 
       if (left <= 0 && !hasFinishedRef.current) {
         hasFinishedRef.current = true;
-        finishInterview();
+        toast.error('Time limit reached! Completing interview...');
+        completeInterview();
       }
     };
 
@@ -179,8 +98,7 @@ export default function InterviewSession() {
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
->>>>>>> Stashed changes
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const submitAnswer = async () => {
@@ -368,10 +286,14 @@ export default function InterviewSession() {
         </motion.div>
       ) : isInProgress && currentQuestion ? (
         <motion.div key={currentQIndex} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6">
-          {/* Progress */}
+          {/* Progress & Countdown Timer */}
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
             <span>Question {currentQIndex + 1} of {interview.questions.length}</span>
-            <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> In Progress</span>
+            <span className={`flex items-center gap-1.5 font-mono font-semibold text-sm ${
+              remainingSeconds < 60 ? 'text-red-500 animate-pulse' : 'text-indigo-600 dark:text-indigo-400'
+            }`}>
+              <Clock className="w-4 h-4" /> Time Remaining: {formatTime(remainingSeconds)}
+            </span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div className="bg-gradient-to-r from-indigo-500 to-violet-500 h-2 rounded-full transition-all" style={{ width: `${((currentQIndex) / interview.questions.length) * 100}%` }} />
@@ -444,3 +366,4 @@ export default function InterviewSession() {
     </div>
   );
 }
+

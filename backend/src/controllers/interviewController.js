@@ -1,10 +1,7 @@
 import MockInterview from '../models/MockInterview.js';
 import Leaderboard from '../models/Leaderboard.js';
 import { generateAIResponse } from '../config/ai.js';
-<<<<<<< Updated upstream
-=======
 import { createNotification } from './notificationController.js';
->>>>>>> Stashed changes
 import {
   SYSTEM_PROMPTS,
   generateInterviewPrompt,
@@ -18,11 +15,7 @@ const startInterview = async (req, res, next) => {
     const { role, experience, type, duration } = req.body;
 
     // Generate initial questions using AI
-<<<<<<< Updated upstream
-    const prompt = `Generate 5 ${type} interview questions for a ${experience}-level ${role} position. Return as JSON array with fields: question, questionType, difficulty.`;
-
-=======
-const prompt = `
+    const prompt = `
 Generate exactly 5 interview questions.
 
 Role: ${role}
@@ -68,7 +61,6 @@ No markdown.
 No explanation.
 Only JSON.
 `;
->>>>>>> Stashed changes
     const aiResponse = await generateAIResponse(
       prompt,
       SYSTEM_PROMPTS.INTERVIEW_QUESTION_GENERATOR
@@ -94,15 +86,6 @@ Only JSON.
       type,
       duration: duration || 30,
       status: 'in-progress',
-<<<<<<< Updated upstream
-      questions: questions.map((q) => ({
-        question: q.question,
-        questionType: q.questionType || type,
-      })),
-    });
-
-    res.status(201).json({ interview });
-=======
       startedAt: new Date(),
       questions: questions.map((q, index) => ({
         question: q.question,
@@ -118,7 +101,6 @@ Only JSON.
 
         difficulty: (q.difficulty || "easy").toLowerCase(),
       })),
-      
     });
 
     res.status(201).json({ interview });
@@ -131,7 +113,6 @@ Only JSON.
       referenceId: interview._id,
       referenceModel: 'MockInterview',
     });
->>>>>>> Stashed changes
   } catch (error) {
     next(error);
   }
@@ -270,9 +251,6 @@ const completeInterview = async (req, res, next) => {
     await awardInterviewPoints(req.user._id, interview._id, totalScore);
 
     res.json({ interview });
-<<<<<<< Updated upstream
-=======
-
     createNotification({
       userId: req.user._id,
       type: 'interview_completed',
@@ -281,7 +259,6 @@ const completeInterview = async (req, res, next) => {
       referenceId: interview._id,
       referenceModel: 'MockInterview',
     });
->>>>>>> Stashed changes
   } catch (error) {
     next(error);
   }

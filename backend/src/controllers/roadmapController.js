@@ -1,12 +1,8 @@
 import Roadmap from '../models/Roadmap.js';
 import Leaderboard from '../models/Leaderboard.js';
 import { generateAIResponse } from '../config/ai.js';
-<<<<<<< Updated upstream
-import { SYSTEM_PROMPTS, generateRoadmapPrompt } from '../utils/aiPrompts.js';
-=======
 import { SYSTEM_PROMPTS, generateRoadmapPrompt, generatePracticeEvaluationPrompt } from '../utils/aiPrompts.js';
 import { createNotification } from './notificationController.js';
->>>>>>> Stashed changes
 
 // @desc    Generate new AI roadmap
 // @route   POST /api/roadmaps/generate
@@ -22,9 +18,6 @@ const generateRoadmap = async (req, res, next) => {
       duration: duration || 4,
     });
 
-<<<<<<< Updated upstream
-    const aiResponse = await generateAIResponse(prompt, SYSTEM_PROMPTS.ROADMAP_GENERATOR);
-=======
     // Helper: robustly extract JSON from AI text that may include markdown fences
     const extractJSON = (text) => {
       // 1. Strip markdown code fences (```json ... ``` or ``` ... ```)
@@ -32,7 +25,6 @@ const generateRoadmap = async (req, res, next) => {
         .replace(/^```(?:json)?\s*/im, '')
         .replace(/\s*```\s*$/im, '')
         .trim();
->>>>>>> Stashed changes
 
       // 2. Try the fence-stripped version first
       try { return JSON.parse(fenceStripped); } catch (_) {}

@@ -107,8 +107,6 @@ Provide detailed feedback as JSON:
 }`;
 };
 
-<<<<<<< Updated upstream
-=======
 export const generateOverallInterviewPrompt = (
   role,
   experience,
@@ -224,4 +222,3 @@ Scoring guide:
 
 Return ONLY valid JSON. No markdown fences.`;
 };
->>>>>>> Stashed changes
