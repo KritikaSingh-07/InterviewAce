@@ -98,6 +98,12 @@ const questionResponseSchema = new mongoose.Schema(
         min: 0,
         max: 100,
       },
+      maxScore: {
+        type: Number,
+        default: 100,
+        min: 1,
+        max: 100,
+      },
     },
   },
   {

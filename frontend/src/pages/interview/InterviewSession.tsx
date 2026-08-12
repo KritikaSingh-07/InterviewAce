@@ -19,6 +19,7 @@ import {
   MessageSquare,
   TrendingUp,
   Award,
+  Volume2,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -29,10 +30,11 @@ interface Question {
   question: string;
   questionType?: string;
   difficulty?: string;
-  status?: string;          // "answered" | "pending"
+  status?: string;
   questionNumber?: number;
   userAnswer?: string;
   score?: number;
+  maxScore?: number;
   aiFeedback?: {
     strengths?: string[];
     missingKeywords?: string[];
@@ -75,7 +77,12 @@ export default function InterviewSession() {
   const { id } = useParams<{ id: string }>();
   const answerRef = useRef<HTMLTextAreaElement>(null);
 
-  /* ---------- state ---------- */
+  /* ---------- Mic & voice preference ---------- */
+  const [micReady, setMicReady] = useState(false);          // whether mic permission is granted
+  const [micTesting, setMicTesting] = useState(false);
+  const [voiceEnabled, setVoiceEnabled] = useState(false); // user wants voice input
+
+  /* ---------- Core state ---------- */
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [finishing, setFinishing] = useState(false);
@@ -94,7 +101,34 @@ export default function InterviewSession() {
   const finalTranscriptRef = useRef("");
 
   /* ================================================================ */
-  /*  Fetch interview (resume from correct question)                  */
+  /*  Derived values                                                  */
+  /* ================================================================ */
+  const isCompleted = interview?.status === "completed";
+  const isInProgress = interview?.status === "in-progress";
+  const currentQuestion = interview?.questions[currentQIndex];
+
+  const answeredCount = useMemo(
+    () =>
+      interview?.questions.filter((q) => q.status === "answered").length ?? 0,
+    [interview]
+  );
+
+  const timeProgressPercent = useMemo(() => {
+    if (!interview || !interview.duration) return 0;
+    const totalSecs = interview.duration * 60;
+    return ((totalSecs - remainingSeconds) / totalSecs) * 100;
+  }, [interview, remainingSeconds]);
+
+  const difficultyColor = currentQuestion?.difficulty
+    ? currentQuestion.difficulty === "hard"
+      ? "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400"
+      : currentQuestion.difficulty === "medium"
+        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
+        : "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
+    : "";
+
+  /* ================================================================ */
+  /*  Fetch interview                                                 */
   /* ================================================================ */
   const fetchInterview = useCallback(async () => {
     try {
@@ -113,12 +147,10 @@ export default function InterviewSession() {
         setRemainingSeconds(0);
       }
 
-      // ✅ Use status field to find the first unanswered question
       const unansweredIndex = fetched.questions.findIndex(
         (q) => q.status !== "answered"
       );
       setCurrentQIndex(unansweredIndex >= 0 ? unansweredIndex : 0);
-
       questionStartTimeRef.current = Date.now();
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Unable to load interview");
@@ -172,8 +204,8 @@ export default function InterviewSession() {
       return;
     }
 
-    const currentQuestion = interview.questions[currentQIndex];
-    if (!currentQuestion) return;
+    const question = interview.questions[currentQIndex];
+    if (!question) return;
 
     const actualDuration = Math.floor(
       (Date.now() - questionStartTimeRef.current) / 1000
@@ -185,11 +217,10 @@ export default function InterviewSession() {
 
     try {
       const { data } = await api.post(
-        `/interviews/${id}/question/${currentQuestion._id}/answer`,
+        `/interviews/${id}/question/${question._id}/answer`,
         { answer: answer.trim(), duration: actualDuration }
       );
 
-      // Mark current question as answered locally
       setInterview((prev) => {
         if (!prev) return prev;
         const updatedQuestions = [...prev.questions];
@@ -209,10 +240,10 @@ export default function InterviewSession() {
       if (data.interviewCompleted) {
         if (data.interview) setInterview(data.interview);
         toast.success("Interview Completed 🎉");
+        setTimeout(() => window.location.reload(), 1500);
         return;
       }
 
-      // Dynamic next question from backend
       if (data.nextQuestion && data.progress) {
         setInterview((prev) => {
           if (!prev) return prev;
@@ -223,29 +254,38 @@ export default function InterviewSession() {
             currentDifficulty: data.nextQuestion.difficulty,
           };
         });
-        setCurrentQIndex(interview.questions.length); // last index (new question)
+        setCurrentQIndex(interview.questions.length);
         if (data.progress.remainingTime !== undefined) {
           setRemainingSeconds(data.progress.remainingTime * 60);
         }
         questionStartTimeRef.current = Date.now();
+
+        // If user had voice enabled, restart recording after a small delay
+        if (voiceEnabled) {
+          setTimeout(() => {
+            if (!isRecognizingRef.current && voiceEnabled) {
+              startSpeechRecognition();
+            }
+          }, 2000);
+        }
         toast.success("Answer submitted");
       }
     } catch (err: any) {
       console.error(err);
       toast.error(
         err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to submit answer"
+          err.response?.data?.error ||
+          "Failed to submit answer"
       );
     } finally {
       setSubmitting(false);
       isSubmittingRef.current = false;
       answerRef.current?.focus();
     }
-  }, [answer, interview, currentQIndex, id, isRecording, navigate]);
+  }, [answer, interview, currentQIndex, id, isRecording, navigate, voiceEnabled]);
 
   /* ================================================================ */
-  /*  Finish interview (manual or timer)                              */
+  /*  Finish interview                                                */
   /* ================================================================ */
   const finishInterview = useCallback(async () => {
     if (finishing || hasFinishedRef.current) return;
@@ -256,7 +296,7 @@ export default function InterviewSession() {
     try {
       await api.post(`/interviews/${id}/complete`);
       toast.success("Interview Completed 🎉");
-      await fetchInterview();
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       hasFinishedRef.current = false;
       toast.error(
@@ -268,7 +308,7 @@ export default function InterviewSession() {
   }, [finishing, id, isRecording]);
 
   /* ================================================================ */
-  /*  Keyboard shortcut (Ctrl + Enter)                                */
+  /*  Keyboard shortcut                                               */
   /* ================================================================ */
   useEffect(() => {
     const listener = (e: KeyboardEvent) => {
@@ -282,15 +322,31 @@ export default function InterviewSession() {
   }, [submitAnswer]);
 
   /* ================================================================ */
-  /*  Auto‑focus & reset question timer on new question               */
+  /*  Focus & reset question timer on new question                    */
   /* ================================================================ */
   useEffect(() => {
     answerRef.current?.focus();
     questionStartTimeRef.current = Date.now();
+    // Reset transcript for the new question
+    finalTranscriptRef.current = "";
+    setAnswer("");
   }, [currentQIndex]);
 
   /* ================================================================ */
-  /*  Speech recognition (production‑safe)                            */
+  /*  Text-to-speech for question                                     */
+  /* ================================================================ */
+  useEffect(() => {
+    if (currentQuestion?.question && isInProgress) {
+      const utterance = new SpeechSynthesisUtterance(currentQuestion.question);
+      utterance.lang = "en-US";
+      utterance.rate = 0.9;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    }
+  }, [currentQIndex, currentQuestion, isInProgress]);
+
+  /* ================================================================ */
+  /*  Speech recognition                                              */
   /* ================================================================ */
   const startSpeechRecognition = () => {
     if (isRecognizingRef.current) return;
@@ -361,48 +417,65 @@ export default function InterviewSession() {
 
   const toggleRecording = () => {
     if (isRecording) {
+      // User manually turned off – remember this choice
+      setVoiceEnabled(false);
       stopSpeechRecognition();
     } else {
+      // User manually turned on – allow continuous recording again
+      setVoiceEnabled(true);
       finalTranscriptRef.current = answer;
       startSpeechRecognition();
     }
   };
 
+  // Auto-start recording when interview is in progress and voice is enabled
+  useEffect(() => {
+    if (isInProgress && voiceEnabled && !isRecording && micReady && !submitting) {
+      // Give a tiny delay to allow TTS to finish (optional)
+      const timer = setTimeout(() => {
+        if (!isRecognizingRef.current && voiceEnabled) {
+          startSpeechRecognition();
+        }
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [isInProgress, voiceEnabled, currentQIndex, submitting, micReady, isRecording]);
+
+  // Cleanup speech recognition on unmount
   useEffect(() => {
     return () => {
       stopSpeechRecognition();
+      window.speechSynthesis.cancel();
     };
   }, []);
 
   /* ================================================================ */
-  /*  Derived values (use status field)                               */
+  /*  Mic test (simplified – only permission, no speech test)         */
   /* ================================================================ */
-  const isCompleted = interview?.status === "completed";
-  const isInProgress = interview?.status === "in-progress";
-  const currentQuestion = interview?.questions[currentQIndex];
+  const requestMicAndTest = async () => {
+    setMicTesting(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+      toast.success("Microphone access granted! Voice input enabled.");
+      setMicReady(true);
+      setVoiceEnabled(true); // automatically enable voice after permission
+    } catch (err) {
+      toast.error("Microphone permission denied. You can still type your answers.");
+      setMicReady(true);
+      setVoiceEnabled(false);
+    } finally {
+      setMicTesting(false);
+    }
+  };
 
-  const answeredCount = useMemo(
-    () =>
-      interview?.questions.filter((q) => q.status === "answered").length ?? 0,
-    [interview]
-  );
-
-  const timeProgressPercent = useMemo(() => {
-    if (!interview || !interview.duration) return 0;
-    const totalSecs = interview.duration * 60;
-    return ((totalSecs - remainingSeconds) / totalSecs) * 100;
-  }, [interview, remainingSeconds]);
-
-  const difficultyColor = currentQuestion?.difficulty
-    ? currentQuestion.difficulty === "hard"
-      ? "bg-red-100 text-red-600 dark:bg-red-500/10 dark:text-red-400"
-      : currentQuestion.difficulty === "medium"
-        ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
-        : "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
-    : "";
+  const skipMicTest = () => {
+    setMicReady(true);
+    setVoiceEnabled(false);
+  };
 
   /* ================================================================ */
-  /*  Loading / empty / error states                                  */
+  /*  Loading / empty states                                          */
   /* ================================================================ */
   if (loading) {
     return (
@@ -436,6 +509,47 @@ export default function InterviewSession() {
         <Link to="/dashboard/interviews" className="btn-primary inline-block">
           Back to Dashboard
         </Link>
+      </div>
+    );
+  }
+
+  /* Mic test screen (only for in-progress, before micReady) */
+  if (isInProgress && !micReady) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card p-8 max-w-md w-full text-center space-y-6"
+        >
+          <Mic className="w-12 h-12 text-indigo-500 mx-auto" />
+          <h2 className="text-2xl font-semibold text-gray-900 dark:text-white">
+            Microphone Setup
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            For the best experience, allow microphone access so you can answer
+            by speaking. You can always type if you prefer.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={requestMicAndTest}
+              disabled={micTesting}
+              className="btn-primary flex items-center justify-center gap-2"
+            >
+              {micTesting ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <>
+                  <Volume2 className="w-5 h-5" />
+                  Enable Microphone
+                </>
+              )}
+            </button>
+            <button onClick={skipMicTest} className="btn-secondary">
+              Skip, I'll type
+            </button>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -478,10 +592,11 @@ export default function InterviewSession() {
             </div>
           )}
           <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${isCompleted
+            className={`text-sm font-medium px-3 py-1 rounded-full ${
+              isCompleted
                 ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
                 : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-              }`}
+            }`}
           >
             {isCompleted ? "completed" : interview.status}
           </span>
@@ -620,14 +735,15 @@ export default function InterviewSession() {
                       Q{i + 1}. {q.question}
                     </span>
                     <span
-                      className={`text-sm font-semibold ${(q.score ?? 0) >= 70
+                      className={`text-sm font-semibold ${
+                        (q.score ?? 0) >= (q.maxScore ?? 100) * 0.7
                           ? "text-emerald-500"
-                          : (q.score ?? 0) >= 50
+                          : (q.score ?? 0) >= (q.maxScore ?? 100) * 0.5
                             ? "text-amber-500"
                             : "text-red-500"
-                        }`}
+                      }`}
                     >
-                      {q.score ?? 0}/100
+                      {q.score ?? 0}/{q.maxScore ?? 100}
                     </span>
                   </div>
                   {q.aiFeedback && (
@@ -665,6 +781,8 @@ export default function InterviewSession() {
                   className={`text-xs font-medium px-2 py-0.5 rounded-full ${difficultyColor}`}
                 >
                   {currentQuestion.difficulty.toUpperCase()}
+                  {currentQuestion.maxScore &&
+                    ` (${currentQuestion.maxScore} pts)`}
                 </span>
               )}
               <span className="flex items-center gap-1">
@@ -705,10 +823,11 @@ export default function InterviewSession() {
                 <button
                   onClick={toggleRecording}
                   disabled={submitting}
-                  className={`p-3 rounded-xl transition-all ${isRecording
+                  className={`p-3 rounded-xl transition-all ${
+                    isRecording
                       ? "bg-red-500 text-white"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-indigo-500"
-                    }`}
+                  }`}
                 >
                   {isRecording ? (
                     <MicOff className="w-5 h-5" />
