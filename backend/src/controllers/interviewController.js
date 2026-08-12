@@ -49,6 +49,7 @@ const startInterview = async (req, res, next) => {
           questionType: firstQuestion.questionType,
           difficulty: firstQuestion.difficulty,
           questionNumber: 1,
+          maxScore: firstQuestion.maxScore,
         },
       ],
     });
@@ -181,6 +182,7 @@ const submitAnswer = async (req, res, next) => {
       difficulty: nextQuestion.difficulty,
       questionNumber: interview.totalQuestionsAsked + 1,
       expectedConcepts: nextQuestion.expectedConcepts || [],
+      maxScore: nextQuestion.maxScore,
     });
 
     interview.totalQuestionsAsked += 1;
@@ -291,6 +293,7 @@ const getInterviewById = async (req, res, next) => {
       });
     }
 
+    // Auto-complete if time expired
     if (
       interview.status === "in-progress" &&
       interview.expiresAt &&
