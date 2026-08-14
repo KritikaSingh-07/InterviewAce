@@ -42,6 +42,7 @@ const studentSidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/roadmaps', icon: Route, label: 'Roadmaps' },
   { to: '/dashboard/interviews', icon: BotMessageSquare, label: 'Mock Interviews' },
+  { to: '/dashboard/tutor', icon: Sparkles, label: 'AI Coding Tutor' },
   { to: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { to: '/dashboard/mentors', icon: Users, label: 'Mentors' },
   { to: '/dashboard/billing', icon: CreditCard, label: 'Billing' },

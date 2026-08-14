@@ -67,6 +67,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       select: false,
     },
+    editorPreferences: {
+      theme: { type: String, default: 'vs-dark' },
+      fontSize: { type: Number, default: 14 },
+      wordWrap: { type: String, default: 'on' },
+      minimap: { type: Boolean, default: true },
+      autoSave: { type: Boolean, default: true },
+    },
+    codingPreferences: {
+      language: { type: String, default: 'javascript' },
+      dailyGoal: { type: Number, default: 1, min: 1 },
+      weeklyGoal: { type: Number, default: 5, min: 1 },
+      targetCompanies: { type: [String], default: [] },
+    },
   },
   {
     timestamps: true,
@@ -102,10 +115,9 @@ userSchema.virtual('studentProfile', {
   justOne: true,
 });
 
-// // Include virtuals in JSON/object serialization
-// userSchema.set('toJSON', { virtuals: true });
-// userSchema.set('toObject', { virtuals: true });
+// Include virtuals in JSON/object serialization
+userSchema.set('toJSON', { virtuals: true });
+userSchema.set('toObject', { virtuals: true });
 
 const User = mongoose.model('User', userSchema);
 export default User;
-
