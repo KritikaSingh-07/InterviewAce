@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const pointSchema = new mongoose.Schema({
   source: {
     type: String,
-    enum: ['mock_interview', 'roadmap_task', 'roadmap_question', 'daily_challenge', 'streak', 'bonus'],
+    enum: ['mock_interview', 'roadmap_task', 'roadmap_question', 'daily_challenge', 'streak', 'bonus', 'coding_tutor'],
     required: true,
   },
   points: {

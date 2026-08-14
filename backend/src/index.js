@@ -21,6 +21,7 @@ import mentorRoutes from './routes/mentorRoutes.js';
 import mentorSectionRoutes from './routes/mentorSectionRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
+import tutorRoutes from './routes/tutorRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -70,6 +71,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/mentors', mentorSectionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/tutor', tutorRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
