@@ -48,6 +48,10 @@ Return ONLY a valid JSON object with these fields:
   "suggestedAnswer": "A model answer (2-3 paragraphs) demonstrating a perfect response"
 }`,
 
+  PRACTICE_EVALUATOR: `You are an expert technical mentor evaluating a learner's written practice answer.
+Your ONLY job is to follow the JSON schema specified in the user's message EXACTLY.
+Do NOT add extra fields. Do NOT change field names. Return ONLY valid JSON with no markdown fences, no extra text.`,
+
   INTERVIEW_QUESTION_GENERATOR: `You are an expert technical interviewer.
 Generate relevant, challenging interview questions based on the role, experience level, and interview type.
 Questions should test:
@@ -223,4 +227,39 @@ Rules:
   "expectedConcepts": []
 }
 `;
+};
+
+// -------------------------------------------------------------------------
+// Practice Question Evaluator (Roadmap)
+// -------------------------------------------------------------------------
+export const generatePracticeEvaluationPrompt = ({ question, answer, type, difficulty, targetRole }) => {
+  return `You are an expert technical mentor evaluating a learner's practice answer.
+
+Context:
+- Target Role: ${targetRole}
+- Question Type: ${type}
+- Difficulty: ${difficulty}
+- Question: ${question}
+- Learner's Answer: ${answer || '(no answer provided)'}
+
+Evaluate the answer thoroughly and return a JSON object with EXACTLY these fields:
+
+{
+  "score": <number 0-100>,
+  "idealAnswer": "<A comprehensive 3-5 paragraph model answer a top candidate would give>",
+  "explanation": "<2-3 paragraphs explaining WHY the ideal answer is correct, covering core concepts>",
+  "keyPoints": ["<key concept 1>", "<key concept 2>", "<key concept 3>", "...up to 6 points"],
+  "diagram": "<Optional: an ASCII or step-by-step numbered breakdown that visually explains the concept. Use ➜ arrows, numbered steps, or a simple text flowchart. Leave empty string if not applicable>",
+  "strengthsInAnswer": ["<what the learner did well>"],
+  "improvementAreas": ["<what was missing or incorrect>"]
+}
+
+Scoring guide:
+- 90-100: Near-perfect, covers all key points with depth
+- 70-89: Good, covers most concepts with minor gaps
+- 50-69: Partial, core idea present but missing important details
+- 30-49: Basic, some relevant points but major gaps
+- 0-29: Incorrect or very incomplete
+
+Return ONLY valid JSON. No markdown fences.`;
 };

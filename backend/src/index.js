@@ -16,10 +16,12 @@ import leaderboardRoutes from './routes/leaderboardRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import studentProfileRoutes from './routes/studentProfileRoutes.js';
 import mentorProfileRoutes from './routes/mentorProfileRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import mentorRoutes from './routes/mentorRoutes.js';
 import mentorSectionRoutes from './routes/mentorSectionRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
+import tutorRoutes from './routes/tutorRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -65,9 +67,11 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/student-profile', studentProfileRoutes);
 app.use('/api/mentor-profile', mentorProfileRoutes);
+app.use('/api/notifications', notificationRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/mentors', mentorSectionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/tutor', tutorRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

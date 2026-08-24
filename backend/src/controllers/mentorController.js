@@ -2,8 +2,20 @@ import MockInterview from '../models/MockInterview.js';
 import User from '../models/User.js';
 import StudentProfile from '../models/StudentProfile.js';
 import Leaderboard from '../models/Leaderboard.js';
+import Profile from '../models/Profile.js';
+import Roadmap from '../models/Roadmap.js';
 
-// @desc    Get all active students with their profiles and AI scores
+// Allowed student plans for mentor view
+const ALLOWED_MENTOR_STUDENT_PLANS = ['pro', 'agency'];
+
+// Helper to normalize and map plan names
+const formatPlanName = (plan) => {
+  if (plan === 'agency') return 'Agency';
+  if (plan === 'pro') return 'Model Pro';
+  return plan || 'Model Pro';
+};
+
+// @desc    Get all active students with pro/agency plans, profiles, and AI scores
 // @route   GET /api/mentor/students
 // @access  Private (Mentor)
 const getActiveStudents = async (req, res, next) => {
@@ -12,55 +24,185 @@ const getActiveStudents = async (req, res, next) => {
       return res.status(403).json({ error: 'Access denied. Mentor only.' });
     }
 
-    // Get all student users who completed onboarding
+    // Parse requested plan_type filter from query params
+    const rawPlan = req.query.plan_type || req.query.plan || req.query.plans;
+    let targetPlans = ALLOWED_MENTOR_STUDENT_PLANS;
+
+    if (rawPlan) {
+      const parsedPlans = (Array.isArray(rawPlan) ? rawPlan : String(rawPlan).split(','))
+        .map((p) => p.trim().toLowerCase())
+        .map((p) => (p === 'model_pro' ? 'pro' : p))
+        .filter((p) => ALLOWED_MENTOR_STUDENT_PLANS.includes(p));
+
+      if (parsedPlans.length > 0) {
+        targetPlans = parsedPlans;
+      }
+    }
+
+    // Get student users who completed onboarding and have pro/agency plans
     const studentUsers = await User.find({
       role: 'student',
       onboardingCompleted: true,
-    }).select('email profileImage profileImagePublicId');
+      plan: { $in: targetPlans },
+    }).select('email plan planStartedAt planExpiresAt profileImage profileImagePublicId codingPreferences');
 
-    // Fetch student profiles
+    const userIds = studentUsers.map((u) => u._id);
+
+    // Fetch student profiles (onboarding details)
     const studentProfiles = await StudentProfile.find({
-      userId: { $in: studentUsers.map((u) => u._id) },
+      userId: { $in: userIds },
     });
 
-    // Fetch leaderboards for scores
+    // Fetch legacy profiles (bio, skills, linkedinUrl, etc.)
+    const legacyProfiles = await Profile.find({
+      user: { $in: userIds },
+    });
+
+    // Fetch leaderboards for AI interview scores and points
     const leaderboards = await Leaderboard.find({
-      user: { $in: studentUsers.map((u) => u._id) },
-    }).select('stats.averageScore totalPoints weeklyPoints rank');
+      user: { $in: userIds },
+    }).select('user stats.averageScore stats.interviewsCompleted totalPoints weeklyPoints rank');
 
     const students = studentUsers.map((user) => {
-      const profile = studentProfiles.find(
-        (p) => p.userId.toString() === user._id.toString()
+      const sProfile = studentProfiles.find(
+        (p) => p.userId && p.userId.toString() === user._id.toString()
+      );
+      const lProfile = legacyProfiles.find(
+        (p) => p.user && p.user.toString() === user._id.toString()
       );
       const lb = leaderboards.find(
-        (l) => l.user.toString() === user._id.toString()
+        (l) => l.user && l.user.toString() === user._id.toString()
       );
+
+      const targetCompanies =
+        sProfile?.targetCompanies && sProfile.targetCompanies.length > 0
+          ? sProfile.targetCompanies
+          : user.codingPreferences?.targetCompanies || [];
+
 
       return {
         _id: user._id,
         email: user.email,
+        plan: user.plan || 'pro',
+        planName: formatPlanName(user.plan),
+        planStartedAt: user.planStartedAt,
+        planExpiresAt: user.planExpiresAt,
         profileImage: user.profileImage,
         profileImagePublicId: user.profileImagePublicId,
-        fullName: profile?.fullName || user.email?.split('@')[0] || 'Student',
-        college: profile?.college || '',
-        degree: profile?.degree || '',
-        branch: profile?.branch || '',
-        year: profile?.year || 1,
-        careerGoal: profile?.careerGoal || '',
-        targetCompanies: profile?.targetCompanies || [],
-        selfAssessment: profile?.selfAssessment || {},
+        fullName: sProfile?.fullName || lProfile?.fullName || user.email?.split('@')[0] || 'Student',
+        college: sProfile?.college || '',
+        degree: sProfile?.degree || '',
+        branch: sProfile?.branch || '',
+        year: sProfile?.year || 1,
+        careerGoal: sProfile?.careerGoal || lProfile?.targetRole || '',
+        targetCompanies,
+        selfAssessment: sProfile?.selfAssessment || {},
+        bio: lProfile?.bio || '',
+        skills: lProfile?.skills || [],
+        linkedinUrl: lProfile?.linkedinUrl || '',
+        githubUrl: lProfile?.githubUrl || '',
+        yearsOfExperience: lProfile?.yearsOfExperience || 0,
         score: lb?.stats?.averageScore || 0,
         totalPoints: lb?.totalPoints || 0,
         weeklyPoints: lb?.weeklyPoints || 0,
+        rank: lb?.rank || 0,
         interviewsCompleted: lb?.stats?.interviewsCompleted || 0,
+        codingPreferences: user.codingPreferences,
       };
     });
 
-    res.json({ students });
+    res.json({
+      count: students.length,
+      filteredPlans: targetPlans,
+      students,
+    });
   } catch (error) {
     next(error);
   }
 };
+
+// @desc    Get complete student profile details by ID
+// @route   GET /api/mentor/students/:id
+// @access  Private (Mentor)
+const getStudentById = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'mentor') {
+      return res.status(403).json({ error: 'Access denied. Mentor only.' });
+    }
+
+    const { id } = req.params;
+
+    const studentUser = await User.findOne({
+      _id: id,
+      role: 'student',
+    }).select('email plan planStartedAt planExpiresAt profileImage profileImagePublicId codingPreferences editorPreferences createdAt');
+
+    if (!studentUser) {
+      return res.status(404).json({ error: 'Student not found' });
+    }
+
+    const [studentProfile, legacyProfile, leaderboard, roadmaps, mockInterviews] = await Promise.all([
+      StudentProfile.findOne({ userId: studentUser._id }),
+      Profile.findOne({ user: studentUser._id }),
+      Leaderboard.findOne({ user: studentUser._id }).select('stats totalPoints weeklyPoints rank streak badges'),
+      Roadmap.find({ user: studentUser._id })
+        .select('targetRole careerBio progress status createdAt durationWeeks')
+        .sort('-createdAt')
+        .limit(3),
+      MockInterview.find({ user: studentUser._id })
+        .select('role type duration rating totalScore status scheduledAt createdAt mentorFeedback suggestions mentor')
+        .populate('mentor', 'email')
+        .sort('-createdAt')
+        .limit(5),
+    ]);
+
+    const targetCompanies =
+      studentProfile?.targetCompanies && studentProfile.targetCompanies.length > 0
+        ? studentProfile.targetCompanies
+        : studentUser.codingPreferences?.targetCompanies || [];
+
+    const studentDetail = {
+      _id: studentUser._id,
+      email: studentUser.email,
+      plan: studentUser.plan || 'pro',
+      planName: formatPlanName(studentUser.plan),
+      planStartedAt: studentUser.planStartedAt,
+      planExpiresAt: studentUser.planExpiresAt,
+      profileImage: studentUser.profileImage,
+      profileImagePublicId: studentUser.profileImagePublicId,
+      fullName: studentProfile?.fullName || legacyProfile?.fullName || studentUser.email?.split('@')[0] || 'Student',
+      college: studentProfile?.college || '',
+      degree: studentProfile?.degree || '',
+      branch: studentProfile?.branch || '',
+      year: studentProfile?.year || 1,
+      careerGoal: studentProfile?.careerGoal || legacyProfile?.targetRole || roadmaps[0]?.targetRole || '',
+      targetCompanies,
+      selfAssessment: studentProfile?.selfAssessment || {},
+      bio: legacyProfile?.bio || roadmaps[0]?.careerBio || '',
+      skills: legacyProfile?.skills || [],
+      linkedinUrl: legacyProfile?.linkedinUrl || '',
+      githubUrl: legacyProfile?.githubUrl || '',
+      yearsOfExperience: legacyProfile?.yearsOfExperience || 0,
+      resumeUrl: legacyProfile?.resumeUrl || '',
+      score: leaderboard?.stats?.averageScore || 0,
+      totalPoints: leaderboard?.totalPoints || 0,
+      weeklyPoints: leaderboard?.weeklyPoints || 0,
+      rank: leaderboard?.rank || 0,
+      streak: leaderboard?.streak || { current: 0, longest: 0 },
+      badges: leaderboard?.badges || [],
+      interviewsCompleted: leaderboard?.stats?.interviewsCompleted || 0,
+      roadmaps: roadmaps || [],
+      mockInterviews: mockInterviews || [],
+      codingPreferences: studentUser.codingPreferences,
+      joinedAt: studentUser.createdAt,
+    };
+
+    res.json({ student: studentDetail });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 // @desc    Create/schedule a mentor-led mock interview session
 // @route   POST /api/mentor/interviews
@@ -141,12 +283,13 @@ const getMentorInterviews = async (req, res, next) => {
     const userIds = interviews.map((i) => i.user?._id).filter(Boolean);
     const studentProfiles = await StudentProfile.find({
       userId: { $in: userIds },
-    }).select('fullName careerGoal college');
+    }).select('userId fullName careerGoal college');
 
     const populated = interviews.map((interview) => {
       const studentProfile = studentProfiles.find(
-        (sp) => sp.userId.toString() === interview.user?._id?.toString()
+        (sp) => sp.userId && sp.userId.toString() === interview.user?._id?.toString()
       );
+
       const obj = interview.toObject();
       return {
         ...obj,
@@ -278,9 +421,11 @@ const submitFeedback = async (req, res, next) => {
 
 export {
   getActiveStudents,
+  getStudentById,
   createMentorInterview,
   getMentorInterviews,
   getMentorInterviewById,
   submitFeedback,
 };
+
 

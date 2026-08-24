@@ -25,6 +25,8 @@ import InterviewSession from './pages/interview/InterviewSession';
 import Leaderboard from './pages/Leaderboard';
 import Mentors from './pages/Mentors';
 import BillingPage from './pages/BillingPage';
+import TutorProblems from './pages/tutor/TutorProblems';
+import CodingSandbox from './pages/tutor/CodingSandbox';
 
 // Onboarding Pages
 import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
@@ -168,7 +170,9 @@ function App() {
           <Route path="roadmaps/:id" element={<StudentRoute><RoadmapDetail /></StudentRoute>} />
           <Route path="interviews" element={<StudentRoute><MockInterview /></StudentRoute>} />
           <Route path="interviews/:id" element={<StudentRoute><InterviewSession /></StudentRoute>} />
-<Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
+          <Route path="tutor" element={<StudentRoute><TutorProblems /></StudentRoute>} />
+          <Route path="tutor/:id" element={<StudentRoute><CodingSandbox /></StudentRoute>} />
+          <Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
           <Route path="mentors" element={<MentorSectionRoute><Mentors /></MentorSectionRoute>} />
           <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
           <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />

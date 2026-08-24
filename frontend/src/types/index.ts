@@ -162,9 +162,19 @@ export interface Resource {
 }
 
 export interface PracticeQuestion {
+  _id: string;
   question: string;
-  type: 'technical' | 'behavioral' | 'system-design';
+  type: 'technical' | 'behavioral' | 'system-design' | 'system design';
   difficulty: 'easy' | 'medium' | 'hard';
+  answered?: boolean;
+  userAnswer?: string;
+  score?: number;
+  aiFeedback?: {
+    idealAnswer: string;
+    explanation: string;
+    keyPoints: string[];
+    score: number;
+  };
 }
 
 // ==================== MOCK INTERVIEW ====================
@@ -180,6 +190,9 @@ export interface MockInterview {
   overallFeedback: FeedbackReport;
   totalScore: number;
   aiAnalysisComplete: boolean;
+  startedAt?: string;
+  completedAt?: string;
+  expiresAt?: string;
   createdAt: string;
 }
 
@@ -271,6 +284,10 @@ export interface InterviewFormData {
 export interface MentorStudent {
   _id: string;
   email: string;
+  plan: Plan;
+  planName?: string;
+  planStartedAt?: string | null;
+  planExpiresAt?: string | null;
   profileImage?: string | null;
   profileImagePublicId?: string | null;
   fullName: string;
@@ -281,11 +298,67 @@ export interface MentorStudent {
   careerGoal: string;
   targetCompanies: string[];
   selfAssessment: Record<string, number>;
+  bio?: string;
+  skills?: Array<{ name: string; level?: string } | string>;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  yearsOfExperience?: number;
   score: number;
   totalPoints: number;
   weeklyPoints: number;
+  rank?: number;
   interviewsCompleted: number;
+  codingPreferences?: {
+    language?: string;
+    dailyGoal?: number;
+    weeklyGoal?: number;
+    targetCompanies?: string[];
+  };
 }
+
+export interface StudentDetailProfile extends MentorStudent {
+  resumeUrl?: string;
+  streak?: {
+    current: number;
+    longest: number;
+  };
+  badges?: Badge[];
+  roadmaps?: Array<{
+    _id: string;
+    targetRole: string;
+    careerBio?: string;
+    progress?: {
+      totalTasks: number;
+      completedTasks: number;
+      percentage: number;
+    };
+    status: string;
+    durationWeeks: number;
+    createdAt: string;
+  }>;
+  mockInterviews?: Array<{
+    _id: string;
+    role: string;
+    type: string;
+    duration: number;
+    rating?: number | null;
+    totalScore: number;
+    status: string;
+    scheduledAt?: string | null;
+    createdAt: string;
+    mentorFeedback?: {
+      strengths?: string[];
+      areasToImprove?: string[];
+    };
+    suggestions?: string;
+    mentor?: {
+      _id: string;
+      email: string;
+    };
+  }>;
+  joinedAt?: string;
+}
+
 
 export interface MentorInterviewSession {
   _id: string;

@@ -43,15 +43,19 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [roadmapsRes, interviewsRes, leaderboardRes] = await Promise.all([
+        const [roadmapsRes, interviewsRes, leaderboardRes] = await Promise.allSettled([
           api.get('/roadmaps'),
           api.get('/interviews'),
           api.get('/leaderboard/me'),
         ]);
 
-        const roadmaps = roadmapsRes.data.roadmaps || [];
-        const interviews = interviewsRes.data.interviews || [];
-        const lb = leaderboardRes.data.leaderboard;
+        const roadmaps = roadmapsRes.status === 'fulfilled' ? (roadmapsRes.value.data.roadmaps || []) : [];
+        const interviews = interviewsRes.status === 'fulfilled' ? (interviewsRes.value.data.interviews || []) : [];
+        const lb = leaderboardRes.status === 'fulfilled' ? leaderboardRes.value.data.leaderboard : null;
+
+        if (roadmapsRes.status === 'rejected') console.error('Failed to fetch roadmaps:', roadmapsRes.reason);
+        if (interviewsRes.status === 'rejected') console.error('Failed to fetch interviews:', interviewsRes.reason);
+        if (leaderboardRes.status === 'rejected') console.error('Failed to fetch leaderboard:', leaderboardRes.reason);
 
         setRecentRoadmaps(roadmaps.slice(0, 3));
         setRecentInterviews(interviews.slice(0, 3));
@@ -316,4 +320,3 @@ export default function Dashboard() {
     </div>
   );
 }
-

@@ -1,5 +1,7 @@
-import MockInterview from "../models/MockInterview.js";
-import Leaderboard from "../models/Leaderboard.js";
+import MockInterview from '../models/MockInterview.js';
+import Leaderboard from '../models/Leaderboard.js';
+import { generateAIResponse } from '../config/ai.js';
+import { createNotification } from './notificationController.js';
 import {
   generateNextQuestion,
   evaluateInterviewAnswer,
@@ -52,6 +54,15 @@ const startInterview = async (req, res, next) => {
           maxScore: firstQuestion.maxScore,
         },
       ],
+    });
+
+    createNotification({
+      userId: req.user._id,
+      type: 'interview_started',
+      title: '🎤 Interview Started!',
+      message: `Your ${type} interview for ${role} (${experience}-level) has started. Good luck!`,
+      referenceId: interview._id,
+      referenceModel: 'MockInterview',
     });
 
     return res.status(201).json({
@@ -244,6 +255,15 @@ const completeInterview = async (req, res, next) => {
       interview._id,
       interview.totalScore
     );
+
+    createNotification({
+      userId: req.user._id,
+      type: 'interview_completed',
+      title: 'Interview Completed! 🎉',
+      message: `You successfully completed your ${interview.role} interview with a score of ${interview.totalScore}/100.`,
+      referenceId: interview._id,
+      referenceModel: 'MockInterview',
+    });
 
     return res.json({
       success: true,
