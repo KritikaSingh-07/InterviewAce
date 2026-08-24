@@ -124,7 +124,7 @@ export default function BillingPage() {
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-5xl mx-auto space-y-8"
+        className="max-w-4xl mx-auto space-y-8"
       >
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>

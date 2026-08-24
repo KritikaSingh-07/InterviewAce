@@ -74,9 +74,9 @@ export default function InterviewSession() {
   const answerRef = useRef<HTMLTextAreaElement>(null);
 
   /* ---------- Mic & voice preference ---------- */
-  const [micReady, setMicReady] = useState(false);          // whether mic permission is granted
+  const [micReady, setMicReady] = useState(false);
   const [micTesting, setMicTesting] = useState(false);
-  const [voiceEnabled, setVoiceEnabled] = useState(false); // user wants voice input
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
 
   /* ---------- Core state ---------- */
   const [loading, setLoading] = useState(true);
@@ -122,6 +122,10 @@ export default function InterviewSession() {
         ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-500/10 dark:text-yellow-400"
         : "bg-green-100 text-green-700 dark:bg-green-500/10 dark:text-green-400"
     : "";
+
+  /* ================================================================ */
+  /*  Fetch interview                                                 */
+  /* ================================================================ */
   const fetchInterview = useCallback(async () => {
     try {
       setLoading(true);
@@ -156,7 +160,7 @@ export default function InterviewSession() {
   }, [fetchInterview]);
 
   /* ================================================================ */
-  /*  Timer effect                                                    */
+  /*  Timer effect (simplified & guaranteed reload)                   */
   /* ================================================================ */
   useEffect(() => {
     if (!interview || interview.status !== "in-progress" || !interview.startedAt) return;
@@ -171,14 +175,30 @@ export default function InterviewSession() {
       if (left <= 0 && !hasFinishedRef.current) {
         hasFinishedRef.current = true;
         toast.error('Time limit reached! Completing interview...');
-        finishInterview();
+
+        // Directly call the completion API and then reload the page.
+        // No dependence on the finishInterview function to avoid closure issues.
+        (async () => {
+          try {
+            await api.post(`/interviews/${id}/complete`);
+            toast.success("Interview Completed 🎉");
+          } catch (err: any) {
+            console.error("Failed to complete interview", err);
+            toast.error(err.response?.data?.message || "Unable to finish interview");
+          } finally {
+            // Always reload after 2 seconds, even if the API call failed
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          }
+        })();
       }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [interview]);
+  }, [interview, id]); // only depends on interview and id
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -253,7 +273,6 @@ export default function InterviewSession() {
         }
         questionStartTimeRef.current = Date.now();
 
-        // If user had voice enabled, restart recording after a small delay
         if (voiceEnabled) {
           setTimeout(() => {
             if (!isRecognizingRef.current && voiceEnabled) {
@@ -267,8 +286,8 @@ export default function InterviewSession() {
       console.error(err);
       toast.error(
         err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to submit answer"
+        err.response?.data?.error ||
+        "Failed to submit answer"
       );
     } finally {
       setSubmitting(false);
@@ -278,7 +297,7 @@ export default function InterviewSession() {
   }, [answer, interview, currentQIndex, id, isRecording, navigate, voiceEnabled]);
 
   /* ================================================================ */
-  /*  Finish interview                                                */
+  /*  Finish interview (kept for manual use if needed)               */
   /* ================================================================ */
   const finishInterview = useCallback(async () => {
     if (finishing || hasFinishedRef.current) return;
@@ -289,7 +308,6 @@ export default function InterviewSession() {
     try {
       await api.post(`/interviews/${id}/complete`);
       toast.success("Interview Completed 🎉");
-      setTimeout(() => window.location.reload(), 1500);
     } catch (err: any) {
       hasFinishedRef.current = false;
       toast.error(
@@ -297,6 +315,7 @@ export default function InterviewSession() {
       );
     } finally {
       setFinishing(false);
+      setTimeout(() => window.location.reload(), 2000);
     }
   }, [finishing, id, isRecording]);
 
@@ -320,7 +339,6 @@ export default function InterviewSession() {
   useEffect(() => {
     answerRef.current?.focus();
     questionStartTimeRef.current = Date.now();
-    // Reset transcript for the new question
     finalTranscriptRef.current = "";
     setAnswer("");
   }, [currentQIndex]);
@@ -410,11 +428,9 @@ export default function InterviewSession() {
 
   const toggleRecording = () => {
     if (isRecording) {
-      // User manually turned off – remember this choice
       setVoiceEnabled(false);
       stopSpeechRecognition();
     } else {
-      // User manually turned on – allow continuous recording again
       setVoiceEnabled(true);
       finalTranscriptRef.current = answer;
       startSpeechRecognition();
@@ -424,7 +440,6 @@ export default function InterviewSession() {
   // Auto-start recording when interview is in progress and voice is enabled
   useEffect(() => {
     if (isInProgress && voiceEnabled && !isRecording && micReady && !submitting) {
-      // Give a tiny delay to allow TTS to finish (optional)
       const timer = setTimeout(() => {
         if (!isRecognizingRef.current && voiceEnabled) {
           startSpeechRecognition();
@@ -452,7 +467,7 @@ export default function InterviewSession() {
       stream.getTracks().forEach((track) => track.stop());
       toast.success("Microphone access granted! Voice input enabled.");
       setMicReady(true);
-      setVoiceEnabled(true); // automatically enable voice after permission
+      setVoiceEnabled(true);
     } catch (err) {
       toast.error("Microphone permission denied. You can still type your answers.");
       setMicReady(true);
@@ -585,11 +600,10 @@ export default function InterviewSession() {
             </div>
           )}
           <span
-            className={`text-sm font-medium px-3 py-1 rounded-full ${
-              isCompleted
+            className={`text-sm font-medium px-3 py-1 rounded-full ${isCompleted
                 ? "bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400"
                 : "bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400"
-            }`}
+              }`}
           >
             {isCompleted ? "completed" : interview.status}
           </span>
@@ -728,13 +742,12 @@ export default function InterviewSession() {
                       Q{i + 1}. {q.question}
                     </span>
                     <span
-                      className={`text-sm font-semibold ${
-                        (q.score ?? 0) >= (q.maxScore ?? 100) * 0.7
+                      className={`text-sm font-semibold ${(q.score ?? 0) >= (q.maxScore ?? 100) * 0.7
                           ? "text-emerald-500"
                           : (q.score ?? 0) >= (q.maxScore ?? 100) * 0.5
                             ? "text-amber-500"
                             : "text-red-500"
-                      }`}
+                        }`}
                     >
                       {q.score ?? 0}/{q.maxScore ?? 100}
                     </span>
@@ -816,11 +829,10 @@ export default function InterviewSession() {
                 <button
                   onClick={toggleRecording}
                   disabled={submitting}
-                  className={`p-3 rounded-xl transition-all ${
-                    isRecording
+                  className={`p-3 rounded-xl transition-all ${isRecording
                       ? "bg-red-500 text-white"
                       : "bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-indigo-500"
-                  }`}
+                    }`}
                 >
                   {isRecording ? (
                     <MicOff className="w-5 h-5" />

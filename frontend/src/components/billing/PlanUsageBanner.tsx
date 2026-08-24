@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Route, BotMessageSquare } from 'lucide-react';
+import { ArrowUpRight, Route, BotMessageSquare, Sparkles } from 'lucide-react';
 import { PlanUsageSummary, formatUsageLabel } from '../../hooks/usePlanUsage';
 import { Plan } from '../../types';
 
@@ -28,37 +28,92 @@ export default function PlanUsageBanner({ usage, highlight = 'both' }: PlanUsage
     (highlight === 'interviews' && interviewAtLimit) ||
     (highlight === 'both' && (roadmapAtLimit || interviewAtLimit));
 
+  // Helper to compute progress percentage (0-100)
+  const getProgress = (used: number, limit: number | null) => {
+    if (!limit) return 0;
+    return Math.min(100, (used / limit) * 100);
+  };
+
+  const renderUsageItem = (
+    icon: React.ReactNode,
+    label: string,
+    used: number,
+    limit: number | null,
+    color: string,
+    barColor: string
+  ) => (
+    <div className="flex-1 min-w-[180px]">
+      <div className="flex items-center gap-2 mb-1.5">
+        {icon}
+        <span className="text-sm text-gray-600 dark:text-gray-300">{label}</span>
+      </div>
+      <div className="flex items-center justify-between text-sm mb-1">
+        <span className="font-medium text-gray-900 dark:text-white">
+          {formatUsageLabel(used, limit)}
+        </span>
+        {limit && (
+          <span className="text-xs text-gray-400 dark:text-gray-500">
+            {Math.round(getProgress(used, limit))}%
+          </span>
+        )}
+      </div>
+      {limit && (
+        <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+          <div
+            className={`h-full rounded-full ${barColor} transition-all`}
+            style={{ width: `${getProgress(used, limit)}%` }}
+          />
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <div className="glass-card p-4 md:p-5 border border-gray-200 dark:border-gray-800">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Current plan</p>
-          <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-            {PLAN_LABELS[usage.plan]} Plan
-          </p>
+    <div className="relative overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-sm border border-gray-100 dark:border-gray-800 p-5 md:p-6">
+      {/* Subtle decorative background */}
+      <div className="absolute inset-0 bg-gradient-to-r from-indigo-50/50 via-transparent to-emerald-50/50 dark:from-indigo-500/5 dark:to-emerald-500/5 pointer-events-none" />
+
+      <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+        {/* Plan info */}
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-indigo-500/10">
+            <Sparkles className="w-5 h-5 text-indigo-500" />
+          </div>
+          <div>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Current plan</p>
+            <p className="text-lg font-bold text-gray-900 dark:text-white capitalize">
+              {PLAN_LABELS[usage.plan]} Plan
+            </p>
+          </div>
         </div>
 
-        <div className="flex flex-wrap gap-4 text-sm">
-          {(highlight === 'both' || highlight === 'roadmaps') && (
-            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-              <Route className="w-4 h-4 text-indigo-500" />
-              <span>{formatUsageLabel(usage.usage.roadmaps, usage.limits.roadmapsPerMonth)} roadmaps</span>
-            </div>
-          )}
-          {(highlight === 'both' || highlight === 'interviews') && (
-            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-              <BotMessageSquare className="w-4 h-4 text-emerald-500" />
-              <span>
-                {formatUsageLabel(usage.usage.interviews, usage.limits.interviewsPerMonth)} interviews
-              </span>
-            </div>
-          )}
+        {/* Usage stats */}
+        <div className="flex flex-col sm:flex-row flex-wrap gap-6">
+          {(highlight === 'both' || highlight === 'roadmaps') &&
+            renderUsageItem(
+              <Route className="w-4 h-4 text-indigo-500 flex-shrink-0" />,
+              'Roadmaps',
+              usage.usage.roadmaps,
+              usage.limits.roadmapsPerMonth,
+              'text-indigo-500',
+              'bg-indigo-500'
+            )}
+          {(highlight === 'both' || highlight === 'interviews') &&
+            renderUsageItem(
+              <BotMessageSquare className="w-4 h-4 text-emerald-500 flex-shrink-0" />,
+              'Interviews',
+              usage.usage.interviews,
+              usage.limits.interviewsPerMonth,
+              'text-emerald-500',
+              'bg-emerald-500'
+            )}
         </div>
 
+        {/* Upgrade button */}
         {showUpgrade && usage.plan !== 'agency' && (
           <Link
             to="/#pricing"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-cyan-600 hover:text-cyan-500"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition-all active:scale-[0.98] shadow-sm whitespace-nowrap"
           >
             Upgrade plan
             <ArrowUpRight className="w-4 h-4" />

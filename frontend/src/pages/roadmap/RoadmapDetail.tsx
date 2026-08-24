@@ -47,12 +47,10 @@ export default function RoadmapDetail() {
   const [loading, setLoading] = useState(true);
   const [expandedWeek, setExpandedWeek] = useState<number | null>(null);
 
-  // Per-question state: which question has its input open, and the current draft
   const [openQuestionId, setOpenQuestionId] = useState<string | null>(null);
   const [draftAnswer, setDraftAnswer] = useState('');
   const [submittingId, setSubmittingId] = useState<string | null>(null);
 
-  // Store feedback keyed by questionId
   const [feedbackMap, setFeedbackMap] = useState<Record<string, AiFeedback>>({});
 
   /* ── Fetch ────────────────────────────────────────────────────────────── */
@@ -75,13 +73,11 @@ export default function RoadmapDetail() {
   useEffect(() => { return () => { document.title = 'InterviewAce'; }; }, []);
 
   /* ── Helpers ──────────────────────────────────────────────────────────── */
-  /** Returns true if this day is unlocked (day 1 always unlocked, others need previous day done) */
   const isDayUnlocked = (weekDays: TaskDay[], dayIndex: number) => {
     if (dayIndex === 0) return true;
     return weekDays[dayIndex - 1]?.completed === true;
   };
 
-  /** Returns true if ALL days up to (but not including) the current week's first day are done */
   const isWeekUnlocked = (weekIndex: number) => {
     if (!roadmap || weekIndex === 0) return true;
     const prevWeek = roadmap.weeklyStructure[weekIndex - 1];
@@ -90,17 +86,17 @@ export default function RoadmapDetail() {
 
   const getResourceIcon = (type: string) => {
     switch (type) {
-      case 'video':         return <Video    className="w-4 h-4" />;
-      case 'article':       return <FileText className="w-4 h-4" />;
-      case 'practice':      return <Code2    className="w-4 h-4" />;
-      default:              return <BookOpen className="w-4 h-4" />;
+      case 'video': return <Video className="w-4 h-4" />;
+      case 'article': return <FileText className="w-4 h-4" />;
+      case 'practice': return <Code2 className="w-4 h-4" />;
+      default: return <BookOpen className="w-4 h-4" />;
     }
   };
 
   const difficultyStyle = (d?: string) => {
-    if (d === 'hard')   return 'bg-red-50    text-red-600    dark:bg-red-500/10    dark:text-red-400';
+    if (d === 'hard') return 'bg-red-50    text-red-600    dark:bg-red-500/10    dark:text-red-400';
     if (d === 'medium') return 'bg-amber-50  text-amber-600  dark:bg-amber-500/10  dark:text-amber-400';
-    return                     'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400';
+    return 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400';
   };
 
   const scoreColor = (s: number) =>
@@ -158,74 +154,108 @@ export default function RoadmapDetail() {
 
   return (
     <div className="space-y-8">
+      {/* ── Premium Hero Section ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-violet-600 to-purple-600 text-white p-8 md:p-10 shadow-xl shadow-indigo-500/20"
+      >
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/10 rounded-full blur-2xl" />
 
-      {/* ── Header ── */}
-      <div className="flex items-start justify-between">
-        <div>
-          <Link to="/dashboard/roadmaps" className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-gray-400 hover:text-indigo-500 mb-2">
-            <ArrowLeft className="w-4 h-4" /> Back to Roadmaps
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{roadmap.targetRole}</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-1">{roadmap.careerBio}</p>
-        </div>
-        <div className="text-right">
-          <div className="text-3xl font-bold gradient-text">{roadmap.progress.percentage}%</div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">Complete</div>
-        </div>
-      </div>
-
-      {/* ── Progress card ── */}
-      <div className="glass-card p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">Progress Overview</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
-            {roadmap.progress.completedTasks}/{roadmap.progress.totalTasks} tasks
-          </span>
-        </div>
-        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 mb-6">
-          <div
-            className="bg-gradient-to-r from-indigo-500 to-violet-500 h-3 rounded-full transition-all duration-700"
-            style={{ width: `${roadmap.progress.percentage}%` }}
-          />
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-          {[
-            { label: 'Weeks',         value: roadmap.durationWeeks,                                       color: 'text-indigo-600 dark:text-indigo-400',  bg: 'bg-indigo-50 dark:bg-indigo-500/10' },
-            { label: 'Completed',     value: roadmap.progress.completedTasks,                             color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-500/10' },
-            { label: 'Remaining',     value: roadmap.progress.totalTasks - roadmap.progress.completedTasks, color: 'text-amber-600 dark:text-amber-400',   bg: 'bg-amber-50 dark:bg-amber-500/10' },
-            { label: 'Skills to Learn', value: roadmap.skillGapAnalysis?.length || 0,                    color: 'text-purple-600 dark:text-purple-400',  bg: 'bg-purple-50 dark:bg-purple-500/10' },
-          ].map(s => (
-            <div key={s.label} className={`p-3 rounded-xl ${s.bg}`}>
-              <div className={`text-lg font-bold ${s.color}`}>{s.value}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{s.label}</div>
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <Link
+              to="/dashboard/roadmaps"
+              className="inline-flex items-center gap-2 text-white/80 hover:text-white text-sm transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Back to Roadmaps
+            </Link>
+            <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+              {roadmap.targetRole}
+            </h1>
+            <p className="text-white/80 max-w-lg">
+              {roadmap.careerBio}
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold uppercase tracking-wider">
+                <Clock className="w-3.5 h-3.5" />
+                {roadmap.durationWeeks} weeks
+              </span>
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold uppercase tracking-wider">
+                <Target className="w-3.5 h-3.5" />
+                {roadmap.progress.totalTasks} tasks
+              </span>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
-      {/* ── Skill Gap ── */}
+          {/* Progress ring and stats */}
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative w-32 h-32">
+              <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8" />
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="45"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 45}
+                  strokeDashoffset={2 * Math.PI * 45 * (1 - roadmap.progress.percentage / 100)}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold">{roadmap.progress.percentage}%</span>
+                <span className="text-[10px] uppercase tracking-wider text-white/80">Complete</span>
+              </div>
+            </div>
+            <div className="flex gap-2 text-sm text-white/80">
+              <span>{roadmap.progress.completedTasks}/{roadmap.progress.totalTasks} tasks</span>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* ── Skill Gap Analysis ── */}
       {roadmap.skillGapAnalysis?.length > 0 && (
-        <div className="glass-card p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6"
+        >
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Skill Gap Analysis</h2>
           <div className="grid gap-3">
             {roadmap.skillGapAnalysis.map((gap, i) => (
-              <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 dark:bg-gray-800/50">
-                <div className={`w-2 h-2 rounded-full ${
-                  gap.priority === 'critical' ? 'bg-red-500' : gap.priority === 'high' ? 'bg-amber-500' : 'bg-indigo-500'
-                }`} />
+              <div
+                key={i}
+                className="flex items-center gap-3 p-4 rounded-xl bg-gray-50 dark:bg-gray-800/50 border border-gray-100 dark:border-gray-800"
+              >
+                <div
+                  className={`w-2 h-2 rounded-full ${gap.priority === 'critical' ? 'bg-red-500' : gap.priority === 'high' ? 'bg-amber-500' : 'bg-indigo-500'
+                    }`}
+                />
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900 dark:text-white">{gap.skill}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{gap.currentLevel} → {gap.targetLevel}</p>
                 </div>
-                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                  gap.priority === 'critical' ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400' :
-                  gap.priority === 'high' ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400' :
-                  'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
-                }`}>{gap.priority}</span>
+                <span
+                  className={`text-xs font-medium px-2.5 py-1 rounded-full ${gap.priority === 'critical'
+                      ? 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400'
+                      : gap.priority === 'high'
+                        ? 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400'
+                        : 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400'
+                    }`}
+                >
+                  {gap.priority}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* ── Weekly Plan ── */}
@@ -235,23 +265,26 @@ export default function RoadmapDetail() {
         {roadmap.weeklyStructure?.map((week, weekIndex) => {
           const weekUnlocked = isWeekUnlocked(weekIndex);
           return (
-            <motion.div key={week.week} initial={false} className="glass-card overflow-hidden">
-
+            <motion.div
+              key={week.week}
+              initial={false}
+              className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden"
+            >
               {/* Week header */}
               <button
                 onClick={() => weekUnlocked && setExpandedWeek(expandedWeek === week.week ? null : week.week)}
-                className={`w-full p-6 flex items-center justify-between transition-all ${
-                  weekUnlocked ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50' : 'opacity-60 cursor-not-allowed'
-                }`}
+                className={`w-full p-6 flex items-center justify-between transition-all ${weekUnlocked ? 'hover:bg-gray-50 dark:hover:bg-gray-800/50' : 'opacity-60 cursor-not-allowed'
+                  }`}
               >
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                    week.completed
-                      ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                      : weekUnlocked
-                        ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
-                        : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
-                  }`}>
+                  <div
+                    className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${week.completed
+                        ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : weekUnlocked
+                          ? 'bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400'
+                          : 'bg-gray-100 dark:bg-gray-800 text-gray-400'
+                      }`}
+                  >
                     {week.completed ? <CheckCircle2 className="w-5 h-5" /> : weekUnlocked ? `W${week.week}` : <Lock className="w-4 h-4" />}
                   </div>
                   <div className="text-left">
@@ -284,14 +317,15 @@ export default function RoadmapDetail() {
                       const allQAnswered = day.practiceQuestions?.every((q: PracticeQuestion) => q.answered) ?? false;
 
                       return (
-                        <div key={day._id} className={`rounded-xl border transition-all ${
-                          day.completed
-                            ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-500/5'
-                            : unlocked
-                              ? 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30'
-                              : 'border-gray-200/50 dark:border-gray-800/50 bg-gray-50/20 dark:bg-gray-900/20 opacity-60'
-                        }`}>
-
+                        <div
+                          key={day._id}
+                          className={`rounded-xl border transition-all ${day.completed
+                              ? 'border-emerald-200 dark:border-emerald-800 bg-emerald-50/30 dark:bg-emerald-500/5'
+                              : unlocked
+                                ? 'border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/30'
+                                : 'border-gray-200/50 dark:border-gray-800/50 bg-gray-50/20 dark:bg-gray-900/20 opacity-60'
+                            }`}
+                        >
                           {/* Day header */}
                           <div className="p-4 flex items-center gap-3">
                             <div className="flex-shrink-0 mt-0.5">
@@ -322,12 +356,14 @@ export default function RoadmapDetail() {
                           {/* Day body — only if unlocked */}
                           {unlocked && (
                             <div className="px-4 pb-4 space-y-4">
-
                               {/* Topics */}
                               {day.topics?.length > 0 && (
                                 <div className="flex flex-wrap gap-1.5">
                                   {day.topics.map((topic, i) => (
-                                    <span key={i} className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400">
+                                    <span
+                                      key={i}
+                                      className="px-2.5 py-1 rounded-md bg-gray-100 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-400"
+                                    >
                                       {topic}
                                     </span>
                                   ))}
@@ -343,7 +379,7 @@ export default function RoadmapDetail() {
                                       href={resource.url}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 hover:text-indigo-500 hover:border-indigo-300 transition-all"
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-xs text-gray-600 dark:text-gray-400 hover:text-indigo-500 hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-all"
                                     >
                                       {getResourceIcon(resource.type)}
                                       {resource.title}
@@ -353,7 +389,7 @@ export default function RoadmapDetail() {
                                 </div>
                               )}
 
-                              {/* ── Practice Questions ── */}
+                              {/* Practice Questions */}
                               {day.practiceQuestions?.length > 0 && (
                                 <div className="space-y-3">
                                   <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
@@ -365,18 +401,24 @@ export default function RoadmapDetail() {
 
                                   {day.practiceQuestions.map((q: PracticeQuestion) => {
                                     const isOpen = openQuestionId === q._id;
-                                    const fb = feedbackMap[q._id] || (q.answered && q.aiFeedback ? {
-                                      score: q.score || 0,
-                                      pointsEarned: q.score! >= 80 ? 15 : q.score! >= 60 ? 10 : q.score! >= 40 ? 5 : 2,
-                                      dayAutoCompleted: false,
-                                      idealAnswer: q.aiFeedback.idealAnswer,
-                                      explanation: q.aiFeedback.explanation,
-                                      keyPoints: q.aiFeedback.keyPoints,
-                                    } as AiFeedback : null);
+                                    const fb =
+                                      feedbackMap[q._id] ||
+                                      (q.answered && q.aiFeedback
+                                        ? {
+                                          score: q.score || 0,
+                                          pointsEarned: q.score! >= 80 ? 15 : q.score! >= 60 ? 10 : q.score! >= 40 ? 5 : 2,
+                                          dayAutoCompleted: false,
+                                          idealAnswer: q.aiFeedback.idealAnswer,
+                                          explanation: q.aiFeedback.explanation,
+                                          keyPoints: q.aiFeedback.keyPoints,
+                                        } as AiFeedback
+                                        : null);
 
                                     return (
-                                      <div key={q._id} className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900">
-
+                                      <div
+                                        key={q._id}
+                                        className="rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden bg-white dark:bg-gray-900"
+                                      >
                                         {/* Question row */}
                                         <div className="p-4">
                                           <div className="flex items-start gap-3">
@@ -444,16 +486,18 @@ export default function RoadmapDetail() {
                                           </AnimatePresence>
                                         </div>
 
-                                        {/* ── AI Feedback panel ── */}
+                                        {/* AI Feedback panel */}
                                         {q.answered && fb && (
                                           <div className="border-t border-gray-100 dark:border-gray-800">
-
                                             {/* Score banner */}
-                                            <div className={`px-4 py-3 flex items-center justify-between ${
-                                              fb.score >= 80 ? 'bg-emerald-50 dark:bg-emerald-500/10' :
-                                              fb.score >= 60 ? 'bg-amber-50 dark:bg-amber-500/10' :
-                                              'bg-red-50 dark:bg-red-500/10'
-                                            }`}>
+                                            <div
+                                              className={`px-4 py-3 flex items-center justify-between ${fb.score >= 80
+                                                  ? 'bg-emerald-50 dark:bg-emerald-500/10'
+                                                  : fb.score >= 60
+                                                    ? 'bg-amber-50 dark:bg-amber-500/10'
+                                                    : 'bg-red-50 dark:bg-red-500/10'
+                                                }`}
+                                            >
                                               <div className="flex items-center gap-2">
                                                 <Star className={`w-4 h-4 ${scoreColor(fb.score)}`} />
                                                 <span className={`text-sm font-bold ${scoreColor(fb.score)}`}>
@@ -474,7 +518,10 @@ export default function RoadmapDetail() {
                                                 </p>
                                                 <div className="flex flex-wrap gap-1.5">
                                                   {fb.keyPoints.map((kp, i) => (
-                                                    <span key={i} className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-medium">
+                                                    <span
+                                                      key={i}
+                                                      className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-medium"
+                                                    >
                                                       {kp}
                                                     </span>
                                                   ))}

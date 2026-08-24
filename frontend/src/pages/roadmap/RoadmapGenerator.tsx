@@ -24,7 +24,7 @@ import { usePlanUsage } from '../../hooks/usePlanUsage';
 // Pre-generated particles for the AI generation overlay (stable, no re-render jitter)
 const GEN_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
   id: i,
-  x: 3 + (i * 3.4) % 94,          // spread across full width
+  x: 3 + (i * 3.4) % 94,
   delay: (i * 0.13) % 2.5,
   duration: 2.2 + (i * 0.17) % 2.8,
   size: 2 + (i * 0.37) % 3.5,
@@ -103,7 +103,6 @@ export default function RoadmapGenerator() {
     const original = formData.careerBio;
 
     try {
-      // Step 1: Build per-character vaporize particles
       const chars = original.split('').map((char, i) => ({
         id: i,
         char: char === ' ' ? '\u00A0' : char,
@@ -115,18 +114,15 @@ export default function RoadmapGenerator() {
       setVaporChars(chars);
       setShowVapor(true);
 
-      // Wait for scatter to finish (~650ms)
       await new Promise((r) => setTimeout(r, 700));
       setShowVapor(false);
       setVaporChars([]);
       setFormData((prev) => ({ ...prev, careerBio: '' }));
       setBioDisplayText('');
 
-      // Step 2: Call API while textarea is empty
       const { data } = await api.post('/roadmaps/polish-bio', { bio: original });
       const polished: string = data.polished || '';
 
-      // Step 3: Typewriter reveal — char by char
       for (let i = 1; i <= polished.length; i++) {
         await new Promise((r) => setTimeout(r, 16));
         const partial = polished.slice(0, i);
@@ -151,13 +147,10 @@ export default function RoadmapGenerator() {
     e.preventDefault();
     e.stopPropagation();
     if (confirmDeleteId !== id) {
-      // First click — ask for confirmation
       setConfirmDeleteId(id);
-      // Auto-reset after 3s if no second click
       setTimeout(() => setConfirmDeleteId((cur) => (cur === id ? null : cur)), 3000);
       return;
     }
-    // Second click — actually delete
     setDeletingId(id);
     try {
       await api.delete(`/roadmaps/${id}`);
@@ -216,6 +209,13 @@ export default function RoadmapGenerator() {
     usage.limits.roadmapsPerMonth !== null &&
     usage.usage.roadmaps >= usage.limits.roadmapsPerMonth;
 
+  // Compute hero stats
+  const totalRoadmaps = roadmaps.length;
+  const completedRoadmaps = roadmaps.filter((r) => r.status === 'completed').length;
+  const avgProgress = totalRoadmaps > 0
+    ? Math.round(roadmaps.reduce((sum, r) => sum + r.progress.percentage, 0) / totalRoadmaps)
+    : 0;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -228,28 +228,67 @@ export default function RoadmapGenerator() {
     <div className="space-y-8">
       {usage && <PlanUsageBanner usage={usage} highlight="roadmaps" />}
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Roadmaps</h1>
-          <p className="text-gray-500 dark:text-gray-400">Generate personalized study plans</p>
-        </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          disabled={roadmapAtLimit}
-          className="btn-primary flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <Zap className="w-4 h-4" />
-          {showForm ? 'Cancel' : 'New Roadmap'}
-        </button>
-      </div>
+      {/* Premium Hero Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-600 via-violet-600 to-purple-600 text-white p-8 md:p-10 shadow-xl shadow-indigo-500/20"
+      >
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-56 h-56 bg-white/10 rounded-full blur-2xl" />
 
-      {/* Generate Form */}
+        <div className="relative flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+          <div className="space-y-4 max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs font-semibold uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              AI Roadmaps
+            </div>
+            <h1 className="text-3xl md:text-4xl font-bold leading-tight">
+              Generate personalized study plans
+            </h1>
+            <p className="text-white/80 max-w-lg">
+              Build a tailored roadmap to master your target role with AI-guided tasks, resources, and practice questions.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <button
+                onClick={() => setShowForm(!showForm)}
+                disabled={roadmapAtLimit}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white text-indigo-700 font-medium text-sm hover:bg-indigo-50 transition-all active:scale-[0.98] shadow-lg shadow-indigo-900/20 disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Zap className="w-4 h-4" />
+                {showForm ? 'Cancel' : 'New Roadmap'}
+              </button>
+            </div>
+          </div>
+
+          {/* Hero stats */}
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
+              <Route className="w-5 h-5 mx-auto mb-1 text-white/80" />
+              <div className="text-2xl font-bold">{totalRoadmaps}</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/70">Roadmaps</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
+              <CheckCircle2 className="w-5 h-5 mx-auto mb-1 text-white/80" />
+              <div className="text-2xl font-bold">{completedRoadmaps}</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/70">Completed</div>
+            </div>
+            <div className="p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 text-center">
+              <Sparkles className="w-5 h-5 mx-auto mb-1 text-white/80" />
+              <div className="text-2xl font-bold">{avgProgress}%</div>
+              <div className="text-[10px] uppercase tracking-wide text-white/70">Avg Progress</div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Generate Form (premium card) */}
       {showForm && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="glass-card p-6 overflow-visible relative"
+          className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 overflow-visible relative"
         >
           {/* ✨ Grainy Rainbow Mesh Gradient Generation Overlay */}
           <AnimatePresence>
@@ -287,7 +326,6 @@ export default function RoadmapGenerator() {
                   }
                 `}</style>
 
-                {/* SVG Filter for genuine retro film grain noise */}
                 <svg className="absolute w-0 h-0 pointer-events-none">
                   <filter id="grainyNoiseFilter">
                     <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" />
@@ -295,12 +333,8 @@ export default function RoadmapGenerator() {
                   </filter>
                 </svg>
 
-                {/* ── Dark Frosted Backdrop ── */}
                 <div className="absolute inset-0" style={{ background: 'rgba(5, 4, 18, 0.68)' }} />
 
-                {/* ── Organic Blended Rainbow Mesh Blobs ── */}
-
-                {/* Blob 1: Electric Fuchsia & Pink */}
                 <div style={{
                   position: 'absolute',
                   width: '75%', height: '85%',
@@ -312,7 +346,6 @@ export default function RoadmapGenerator() {
                   animation: 'rainbowSwirlA 14s ease-in-out infinite',
                 }} />
 
-                {/* Blob 2: Ocean Cyan & Deep Blue */}
                 <div style={{
                   position: 'absolute',
                   width: '70%', height: '75%',
@@ -324,7 +357,6 @@ export default function RoadmapGenerator() {
                   animation: 'rainbowSwirlB 16s ease-in-out infinite',
                 }} />
 
-                {/* Blob 3: Vibrant Purple & Violet */}
                 <div style={{
                   position: 'absolute',
                   width: '65%', height: '70%',
@@ -336,7 +368,6 @@ export default function RoadmapGenerator() {
                   animation: 'rainbowSwirlC 12s ease-in-out infinite',
                 }} />
 
-                {/* Blob 4: Warm Sunset Gold & Amber Coral */}
                 <div style={{
                   position: 'absolute',
                   width: '50%', height: '60%',
@@ -348,7 +379,6 @@ export default function RoadmapGenerator() {
                   animation: 'rainbowSwirlA 18s ease-in-out infinite reverse',
                 }} />
 
-                {/* Blob 5: Neon Emerald & Lime Highlight */}
                 <div style={{
                   position: 'absolute',
                   width: '45%', height: '50%',
@@ -360,7 +390,6 @@ export default function RoadmapGenerator() {
                   animation: 'rainbowSwirlB 10s ease-in-out infinite',
                 }} />
 
-                {/* ── Retro Film Grain Noise Overlay ── */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
@@ -369,7 +398,6 @@ export default function RoadmapGenerator() {
                   animation: 'noisePulse 3s ease-in-out infinite',
                 }} />
 
-                {/* ── Retro Dotted Pattern Overlay ── */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
@@ -378,7 +406,6 @@ export default function RoadmapGenerator() {
                   animation: 'dottedMatrixPulse 3.5s ease-in-out infinite',
                 }} />
 
-                {/* ── Soft Vignette & Border Glow ── */}
                 <div style={{
                   position: 'absolute',
                   inset: 0,
@@ -389,8 +416,6 @@ export default function RoadmapGenerator() {
               </motion.div>
             )}
           </AnimatePresence>
-
-
 
           <form onSubmit={generateRoadmap} className="space-y-4">
             <div className="grid md:grid-cols-2 gap-4 overflow-visible">
@@ -405,7 +430,6 @@ export default function RoadmapGenerator() {
               </div>
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium mb-2">Career Bio / Summary</label>
-                {/* Bio textarea with Polish AI button + Thanos snap overlay */}
                 <div className="relative">
                   <textarea
                     ref={bioRef}
@@ -415,13 +439,11 @@ export default function RoadmapGenerator() {
                         setFormData({ ...formData, careerBio: e.target.value });
                     }}
                     readOnly={bioAnimating}
-                    className={`input-field h-24 resize-none w-full pr-12 transition-all duration-200 ${
-                      showVapor ? 'opacity-0' : bioAnimating ? 'opacity-90 caret-transparent' : ''
-                    }`}
+                    className={`input-field h-24 resize-none w-full pr-12 transition-all duration-200 ${showVapor ? 'opacity-0' : bioAnimating ? 'opacity-90 caret-transparent' : ''
+                      }`}
                     placeholder="Tell us about your experience, current skills, and what you want to achieve..."
                   />
 
-                  {/* Thanos snap vaporize overlay */}
                   <AnimatePresence>
                     {showVapor && (
                       <div
@@ -450,7 +472,6 @@ export default function RoadmapGenerator() {
                     )}
                   </AnimatePresence>
 
-                  {/* Polish with AI circular button */}
                   <div className="absolute bottom-3 right-3">
                     <motion.button
                       type="button"
@@ -467,7 +488,6 @@ export default function RoadmapGenerator() {
                           : '0 0 8px rgba(139,92,246,0.5)',
                       }}
                     >
-                      {/* Spinning ring when active */}
                       {polishing && (
                         <motion.span
                           className="absolute inset-0 rounded-full border-2 border-transparent"
@@ -485,7 +505,6 @@ export default function RoadmapGenerator() {
                     </motion.button>
                   </div>
 
-                  {/* Tooltip label */}
                   {!polishing && (
                     <motion.div
                       initial={{ opacity: 0, x: 4 }}
@@ -509,7 +528,6 @@ export default function RoadmapGenerator() {
               </div>
               <div ref={durationRef} className="relative">
                 <label className="block text-sm font-medium mb-2">Duration (weeks)</label>
-                {/* Custom styled dropdown */}
                 <button
                   type="button"
                   onClick={() => setDurationOpen((v) => !v)}
@@ -546,17 +564,15 @@ export default function RoadmapGenerator() {
                               setFormData({ ...formData, duration: w });
                               setDurationOpen(false);
                             }}
-                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-100 flex items-center justify-between group ${
-                              formData.duration === w
+                            className={`w-full text-left px-4 py-2.5 rounded-lg text-sm transition-all duration-100 flex items-center justify-between group ${formData.duration === w
                                 ? 'bg-indigo-600/30 text-indigo-300'
                                 : 'text-gray-300 hover:bg-white/5 hover:text-white'
-                            }`}
+                              }`}
                           >
                             <span className="flex items-center gap-2">
                               <span
-                                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${
-                                  formData.duration === w ? 'bg-indigo-400' : 'bg-gray-600 group-hover:bg-indigo-500'
-                                }`}
+                                className={`w-1.5 h-1.5 rounded-full flex-shrink-0 transition-colors ${formData.duration === w ? 'bg-indigo-400' : 'bg-gray-600 group-hover:bg-indigo-500'
+                                  }`}
                               />
                               {w} weeks
                             </span>
@@ -592,7 +608,7 @@ export default function RoadmapGenerator() {
         </motion.div>
       )}
 
-      {/* Roadmaps List */}
+      {/* Roadmaps List (premium cards) */}
       {roadmaps.length > 0 ? (
         <div className="grid gap-4">
           <AnimatePresence mode="popLayout">
@@ -608,7 +624,7 @@ export default function RoadmapGenerator() {
               >
                 <Link
                   to={`/dashboard/roadmaps/${roadmap._id}`}
-                  className="glass-card p-6 flex items-center gap-4 group"
+                  className="bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 flex items-center gap-4 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500/30 transition-all group"
                 >
                   <div className="p-3 rounded-xl bg-gradient-to-br from-indigo-500 to-violet-500 flex-shrink-0">
                     <Route className="w-6 h-6 text-white" />
@@ -627,7 +643,6 @@ export default function RoadmapGenerator() {
                         {roadmap.progress.completedTasks}/{roadmap.progress.totalTasks} tasks
                       </span>
                     </div>
-                    {/* Progress bar */}
                     <div className="mt-3 w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                       <div
                         className="bg-gradient-to-r from-indigo-500 to-violet-500 h-2 rounded-full transition-all duration-500"
@@ -646,7 +661,6 @@ export default function RoadmapGenerator() {
                   <ChevronRight className="w-5 h-5 text-gray-400 group-hover:translate-x-1 transition-transform flex-shrink-0" />
                 </Link>
 
-                {/* Delete button — top-right corner, no content overlap */}
                 <div className="absolute top-3 right-3">
                   <motion.button
                     onClick={(e) => handleDelete(e, roadmap._id)}
@@ -655,10 +669,9 @@ export default function RoadmapGenerator() {
                     whileTap={{ scale: 0.9 }}
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200
                       opacity-0 group-hover/card:opacity-100
-                      ${
-                        confirmDeleteId === roadmap._id
-                          ? 'bg-red-500/25 border border-red-500/70 text-red-400 !opacity-100 ring-2 ring-red-500/30'
-                          : 'bg-black/30 border border-white/10 text-gray-500 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400'
+                      ${confirmDeleteId === roadmap._id
+                        ? 'bg-red-500/25 border border-red-500/70 text-red-400 !opacity-100 ring-2 ring-red-500/30'
+                        : 'bg-black/30 border border-white/10 text-gray-500 hover:bg-red-500/20 hover:border-red-500/50 hover:text-red-400'
                       }`}
                   >
                     {deletingId === roadmap._id ? (
@@ -672,7 +685,6 @@ export default function RoadmapGenerator() {
                     )}
                   </motion.button>
 
-                  {/* Confirm tooltip above the button */}
                   <AnimatePresence>
                     {confirmDeleteId === roadmap._id && (
                       <motion.div
@@ -714,4 +726,3 @@ export default function RoadmapGenerator() {
     </div>
   );
 }
-

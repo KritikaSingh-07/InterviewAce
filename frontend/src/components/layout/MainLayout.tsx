@@ -16,17 +16,16 @@ import {
   Sun,
   Moon,
   Menu,
-  X,
   Bell,
   UserCircle2,
   CheckCheck,
   Sparkles,
   BellOff,
-  CheckCircle2,
   Users,
   ClipboardList,
   MessageSquareText,
   CreditCard,
+  Search,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -75,7 +74,6 @@ export default function MainLayout() {
       const fetched: NotificationItem[] = data.notifications || [];
       const newUnread: number = data.unreadCount || 0;
 
-      // Toast for any brand-new unread notification
       fetched.forEach((n) => {
         if (!n.read && !prevIdsRef.current.has(n._id)) {
           toast(n.title, {
@@ -97,7 +95,6 @@ export default function MainLayout() {
 
   useEffect(() => {
     fetchNotifications();
-    // Poll every 10 s so roadmap / interview notifications appear quickly
     const interval = setInterval(fetchNotifications, 10000);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
@@ -134,11 +131,7 @@ export default function MainLayout() {
     return `${Math.floor(hours / 24)}d ago`;
   };
 
-const isMentor = user?.role === 'mentor';
-
-  // Mentors section is visible to all students. For non-Pro/Agency students,
-  // the Mentors page itself renders a locked state with an "Upgrade Now" CTA.
-  // (Already hidden from mentors who use the mentor sidebar.)
+  const isMentor = user?.role === 'mentor';
   const sidebarLinks = isMentor ? mentorSidebarLinks : studentSidebarLinks;
 
   useEffect(() => {
@@ -151,6 +144,31 @@ const isMentor = user?.role === 'mentor';
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  const getBreadcrumb = () => {
+    const segments = location.pathname.split('/').filter(Boolean);
+    const last = segments[segments.length - 1] || 'dashboard';
+    const secondLast = segments[segments.length - 2];
+    const isId = /^[a-f0-9]{24}$/.test(last);
+
+    let pageName = last.replace(/-/g, ' ');
+    if (isId) {
+      if (secondLast === 'roadmaps') pageName = 'Roadmap Detail';
+      else if (secondLast === 'interviews') pageName = 'Interview Session';
+      else if (secondLast === 'tutor') pageName = 'AI Coding Tutor';
+      else pageName = secondLast?.replace(/-/g, ' ') || 'Detail';
+    }
+
+    return (
+      <div className="flex items-center gap-2 text-sm">
+        <span className="text-gray-400 dark:text-gray-500">Dashboard</span>
+        <ChevronRight className="w-3 h-3 text-gray-400 dark:text-gray-500" />
+        <span className="font-medium text-gray-700 dark:text-gray-200 capitalize">
+          {pageName}
+        </span>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
@@ -171,16 +189,16 @@ const isMentor = user?.role === 'mentor';
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
-        className={`fixed left-0 top-0 h-full z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg
+        className={`fixed left-0 top-0 h-full z-50 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl border-r border-gray-200/80 dark:border-gray-800/80 shadow-lg
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
-          transition-transform duration-300`}
+          transition-all duration-300`}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="p-4 border-b border-gray-200 dark:border-gray-800">
+          {/* Logo + Collapse Button */}
+          <div className="flex items-center justify-between p-4 border-b border-gray-200/80 dark:border-gray-800/80">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-lg">IA</span>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-indigo-500/30">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               {!collapsed && (
                 <motion.div
@@ -188,11 +206,24 @@ const isMentor = user?.role === 'mentor';
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                 >
-                  <h1 className="text-lg font-bold gradient-text">InterviewAce</h1>
+                  <h1 className="text-lg font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">
+                    InterviewAce
+                  </h1>
                   <p className="text-xs text-gray-500 dark:text-gray-400">AI Interview Coach</p>
                 </motion.div>
               )}
             </div>
+            <button
+              onClick={() => setCollapsed(!collapsed)}
+              className="hidden lg:flex p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors"
+              title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {collapsed ? (
+                <ChevronRight className="w-4 h-4" />
+              ) : (
+                <ChevronLeft className="w-4 h-4" />
+              )}
+            </button>
           </div>
 
           {/* Navigation */}
@@ -206,16 +237,14 @@ const isMentor = user?.role === 'mentor';
                   onClick={() => setMobileOpen(false)}
                   className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group
                     ${isActive
-                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium'
+                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-semibold shadow-sm'
                       : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                 >
                   <link.icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <span className="text-sm truncate">{link.label}</span>
-                  )}
+                  {!collapsed && <span className="text-sm truncate">{link.label}</span>}
                   {isActive && !collapsed && (
-                    <motion.div
+                    <motion.span
                       layoutId="activeTab"
                       className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500"
                     />
@@ -226,16 +255,7 @@ const isMentor = user?.role === 'mentor';
           </nav>
 
           {/* Bottom Section */}
-          <div className="p-3 border-t border-gray-200 dark:border-gray-800 space-y-2">
-            {/* Collapse button */}
-            <button
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden lg:flex w-full items-center justify-center p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400"
-            >
-              {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-            </button>
-
-            {/* User info */}
+          <div className="p-3 border-t border-gray-200/80 dark:border-gray-800/80 space-y-2">
             <div className={`flex items-center gap-3 p-2 ${collapsed ? 'justify-center' : ''}`}>
               {user?.profileImage ? (
                 <img
@@ -245,9 +265,7 @@ const isMentor = user?.role === 'mentor';
                 />
               ) : (
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-semibold text-sm">
-                    {user?.profile?.fullName?.charAt(0)?.toUpperCase() || 'U'}
-                  </span>
+                  <UserCircle2 className="w-5 h-5 text-white" />
                 </div>
               )}
               {!collapsed && (
@@ -259,8 +277,6 @@ const isMentor = user?.role === 'mentor';
                 </div>
               )}
             </div>
-
-            {/* Logout */}
             <button
               onClick={logout}
               className="flex items-center gap-3 w-full px-3 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all"
@@ -273,44 +289,60 @@ const isMentor = user?.role === 'mentor';
       </motion.aside>
 
       {/* Main Content */}
-      <div className={`flex-1 flex flex-col min-h-screen ${collapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-300`}>
-        {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+      <div
+        className={`flex-1 flex flex-col min-h-screen ${collapsed ? 'lg:ml-20' : 'lg:ml-72'
+          } transition-all duration-300`}
+      >
+        {/* Premium Top Bar */}
+        <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200/80 dark:border-gray-800/80">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
+              {/* Mobile menu button */}
               <button
                 onClick={() => setMobileOpen(true)}
-                className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800"
+                className="lg:hidden p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-colors"
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                {(() => {
-                  const segments = location.pathname.split('/').filter(Boolean);
-                  const last = segments[segments.length - 1];
-                  const secondLast = segments[segments.length - 2];
-                  // If the last segment looks like a MongoDB ObjectId (24 hex chars), show parent name instead
-                  const isId = /^[a-f0-9]{24}$/.test(last);
-                  if (isId) {
-                    if (secondLast === 'roadmaps') return 'Roadmap Detail';
-                    if (secondLast === 'interviews') return 'Interview Session';
-                    return secondLast?.replace(/-/g, ' ') || 'Detail';
-                  }
-                  return last?.replace(/-/g, ' ') || 'Dashboard';
-                })()}
-              </h2>
+
+              {/* Breadcrumb / Page title */}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                    {(() => {
+                      const segments = location.pathname.split('/').filter(Boolean);
+                      const last = segments[segments.length - 1];
+                      const secondLast = segments[segments.length - 2];
+                      const isId = /^[a-f0-9]{24}$/.test(last);
+                      if (isId) {
+                        if (secondLast === 'roadmaps') return 'Roadmap Detail';
+                        if (secondLast === 'interviews') return 'Interview Session';
+                        if (secondLast === 'tutor') return 'AI Coding Tutor';
+                        return secondLast?.replace(/-/g, ' ') || 'Detail';
+                      }
+                      return last?.replace(/-/g, ' ') || 'Dashboard';
+                    })()}
+                  </h2>
+                </div>
+                {getBreadcrumb()}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
+
               <button
                 onClick={toggle}
                 className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-all"
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               </button>
+
               <div className="relative">
                 <button
-                  onClick={(e) => { e.stopPropagation(); setNotifOpen((o) => !o); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setNotifOpen((o) => !o);
+                  }}
                   className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-all relative"
                 >
                   <Bell className="w-5 h-5" />
@@ -322,7 +354,6 @@ const isMentor = user?.role === 'mentor';
                 <AnimatePresence>
                   {notifOpen && (
                     <>
-                      {/* Invisible backdrop: click anywhere outside closes the panel */}
                       <div
                         className="fixed inset-0 z-40"
                         onClick={() => setNotifOpen(false)}
@@ -368,18 +399,20 @@ const isMentor = user?.role === 'mentor';
                                 <button
                                   key={n._id}
                                   onClick={() => !n.read && handleMarkAsRead(n._id)}
-                                  className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 ${
-                                    !n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
-                                  }`}
+                                  className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 ${!n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
+                                    }`}
                                 >
                                   <div className="mt-0.5 flex-shrink-0">
-                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                                      n.read ? 'bg-gray-100 dark:bg-gray-800' : (
-                                        isRoadmap ? 'bg-violet-100 dark:bg-violet-500/20' :
-                                        isInterview ? 'bg-emerald-100 dark:bg-emerald-500/20' :
-                                        'bg-indigo-100 dark:bg-indigo-500/20'
-                                      )
-                                    }`}>
+                                    <div
+                                      className={`w-8 h-8 rounded-lg flex items-center justify-center ${n.read
+                                          ? 'bg-gray-100 dark:bg-gray-800'
+                                          : isRoadmap
+                                            ? 'bg-violet-100 dark:bg-violet-500/20'
+                                            : isInterview
+                                              ? 'bg-emerald-100 dark:bg-emerald-500/20'
+                                              : 'bg-indigo-100 dark:bg-indigo-500/20'
+                                        }`}
+                                    >
                                       {isRoadmap ? (
                                         <Route className={`w-4 h-4 ${n.read ? 'text-gray-400' : 'text-violet-500'}`} />
                                       ) : isInterview ? (
@@ -413,12 +446,13 @@ const isMentor = user?.role === 'mentor';
                   )}
                 </AnimatePresence>
               </div>
+
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-105 dark:hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {user?.profileImage ? (
                     <img
@@ -427,8 +461,8 @@ const isMentor = user?.role === 'mentor';
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white text-xs font-bold">
-                      {user?.profile?.fullName?.charAt(0).toUpperCase() || 'U'}
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-violet-500 flex items-center justify-center text-white">
+                      <UserCircle2 className="w-5 h-5" />
                     </div>
                   )}
                 </button>
@@ -472,10 +506,10 @@ const isMentor = user?.role === 'mentor';
                             setDropdownOpen(false);
                             logout();
                           }}
-                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-655 dark:text-red-450 hover:bg-red-50 dark:hover:bg-red-955/20 transition-colors"
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                         >
                           <LogOut className="w-4 h-4 text-red-500" />
-                          <span className="text-red-600">Logout</span>
+                          <span>Logout</span>
                         </button>
                       </motion.div>
                     </>
@@ -494,4 +528,3 @@ const isMentor = user?.role === 'mentor';
     </div>
   );
 }
-
