@@ -273,22 +273,25 @@ const getMentorInterviews = async (req, res, next) => {
 
     const interviews = await MockInterview.find({ mentor: req.user._id })
       .populate('user', 'email profileImage')
-      .populate({
-        path: 'user',
-        populate: { path: 'studentProfile', select: 'fullName' },
-      })
       .sort('-createdAt');
 
     // Attach student full name via StudentProfile lookup
-    const userIds = interviews.map((i) => i.user?._id).filter(Boolean);
+    const userIds = interviews
+      .map((i) => i.user?._id)
+      .filter(Boolean);
     const studentProfiles = await StudentProfile.find({
       userId: { $in: userIds },
     }).select('userId fullName careerGoal college');
 
+    const profileByUserId = new Map(
+      studentProfiles
+        .filter((sp) => sp.userId)
+        .map((sp) => [sp.userId.toString(), sp])
+    );
+
     const populated = interviews.map((interview) => {
-      const studentProfile = studentProfiles.find(
-        (sp) => sp.userId && sp.userId.toString() === interview.user?._id?.toString()
-      );
+      const userId = interview.user?._id?.toString();
+      const studentProfile = userId ? profileByUserId.get(userId) : null;
 
       const obj = interview.toObject();
       return {
@@ -320,6 +323,10 @@ const getMentorInterviewById = async (req, res, next) => {
 
     if (!interview) {
       return res.status(404).json({ error: 'Interview not found' });
+    }
+
+    if (!interview.user?._id) {
+      return res.status(404).json({ error: 'Student account not found for this interview' });
     }
 
     const studentProfile = await StudentProfile.findOne({
