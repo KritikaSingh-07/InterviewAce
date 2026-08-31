@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getActiveStudents,
+  getStudentById,
   createMentorInterview,
   getMentorInterviews,
   getMentorInterviewById,
@@ -12,9 +13,11 @@ const router = express.Router();
 
 // All mentor routes require authentication and mentor role (checked in controller)
 router.get('/students', protect, getActiveStudents);
+router.get('/students/:id', protect, getStudentById);
 router.post('/interviews', protect, createMentorInterview);
 router.get('/interviews', protect, getMentorInterviews);
 router.get('/interviews/:id', protect, getMentorInterviewById);
 router.post('/interviews/:id/feedback', protect, submitFeedback);
 
 export default router;
+
