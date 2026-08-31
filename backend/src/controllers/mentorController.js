@@ -4,6 +4,7 @@ import StudentProfile from '../models/StudentProfile.js';
 import Leaderboard from '../models/Leaderboard.js';
 import Profile from '../models/Profile.js';
 import Roadmap from '../models/Roadmap.js';
+import MentorProfile from '../models/MentorProfile.js';
 
 // Allowed student plans for mentor view
 const ALLOWED_MENTOR_STUDENT_PLANS = ['pro', 'agency'];
@@ -232,6 +233,14 @@ const createMentorInterview = async (req, res, next) => {
     const student = await User.findOne({ _id: studentId, role: 'student' });
     if (!student) {
       return res.status(404).json({ error: 'Student not found' });
+    }
+
+    // Check if mentor has session rate and if payment is required
+    const mentorProfile = await MentorProfile.findOne({ userId: req.user._id });
+    if (mentorProfile?.sessionRate > 0 && !req.body.sessionPaymentId) {
+      // Mentor-initiated sessions don't require student payment
+      // Only student-initiated bookings require payment
+      // This endpoint is mentor-only, so no payment needed here
     }
 
     // Validate interview type

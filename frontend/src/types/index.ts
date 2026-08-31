@@ -469,3 +469,85 @@ export interface PaginatedResponse<T> {
   };
 }
 
+// ==================== MENTOR EARNINGS ====================
+export interface WalletSummary {
+  totalEarned: number;
+  availableBalance: number;
+  pendingBalance: number;
+  withdrawnAmount: number;
+  formatted: {
+    totalEarned: string;
+    availableBalance: string;
+    pendingBalance: string;
+    withdrawnAmount: string;
+  };
+}
+
+export interface LedgerEntry {
+  _id: string;
+  type: 'session_earning' | 'refund_debit' | 'withdrawal' | 'adjustment';
+  amount: number;
+  mentorShare: number;
+  platformShare: number;
+  grossAmount: number;
+  status: 'pending' | 'settled' | 'withdrawn' | 'reversed';
+  sessionPayment?: {
+    _id: string;
+    orderId: string;
+    invoiceId?: string;
+  };
+  student?: {
+    _id: string;
+    email: string;
+  };
+  studentName?: string;
+  description: string;
+  settlesAt?: string;
+  settledAt?: string;
+  createdAt: string;
+}
+
+export interface WithdrawalRequest {
+  _id: string;
+  amount: number;
+  status: 'requested' | 'approved' | 'processing' | 'success' | 'failed' | 'cancelled';
+  bankSnapshot: {
+    accountNumberMasked: string;
+    ifsc: string;
+    accountHolderName: string;
+    bankName: string;
+  };
+  payoutId?: string;
+  utr?: string;
+  failureReason?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  completedAt?: string;
+  approvedAt?: string;
+}
+
+export interface BankAccountInfo {
+  accountNumberMasked: string;
+  ifscDisplay: string;
+  bankName: string;
+  accountHolderName: string;
+  payoutMethod: 'bank_transfer' | 'upi';
+  isVerified: boolean;
+  verificationStatus: 'unverified' | 'pending' | 'verified' | 'failed';
+}
+
+export interface MonthlyEarning {
+  month: string;
+  label: string;
+  amount: number;
+}
+
+export interface BankAccountFormData {
+  accountNumber: string;
+  confirmAccountNumber: string;
+  ifsc: string;
+  accountHolderName: string;
+  upiId?: string;
+  payoutMethod: 'bank_transfer' | 'upi';
+}
+
