@@ -17,6 +17,8 @@ import MentorDashboard from './pages/dashboard/MentorDashboard';
 import MentorStudents from './pages/dashboard/MentorStudents';
 import MentorSessions from './pages/dashboard/MentorSessions';
 import MentorFeedback from './pages/dashboard/MentorFeedback';
+import MentorEarnings from './pages/dashboard/MentorEarnings';
+import MentorBankSettings from './pages/dashboard/MentorBankSettings';
 import ProfileSetup from './pages/ProfileSetup';
 import RoadmapGenerator from './pages/roadmap/RoadmapGenerator';
 import RoadmapDetail from './pages/roadmap/RoadmapDetail';
@@ -25,6 +27,8 @@ import InterviewSession from './pages/interview/InterviewSession';
 import Leaderboard from './pages/Leaderboard';
 import Mentors from './pages/Mentors';
 import BillingPage from './pages/BillingPage';
+import TutorProblems from './pages/tutor/TutorProblems';
+import CodingSandbox from './pages/tutor/CodingSandbox';
 
 // Onboarding Pages
 import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
@@ -168,12 +172,16 @@ function App() {
           <Route path="roadmaps/:id" element={<StudentRoute><RoadmapDetail /></StudentRoute>} />
           <Route path="interviews" element={<StudentRoute><MockInterview /></StudentRoute>} />
           <Route path="interviews/:id" element={<StudentRoute><InterviewSession /></StudentRoute>} />
-<Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
+          <Route path="tutor" element={<StudentRoute><TutorProblems /></StudentRoute>} />
+          <Route path="tutor/:id" element={<StudentRoute><CodingSandbox /></StudentRoute>} />
+          <Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
           <Route path="mentors" element={<MentorSectionRoute><Mentors /></MentorSectionRoute>} />
           <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
           <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />
           <Route path="sessions" element={<MentorRoute><MentorSessions /></MentorRoute>} />
-<Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="earnings" element={<MentorRoute><MentorEarnings /></MentorRoute>} />
+          <Route path="bank-settings" element={<MentorRoute><MentorBankSettings /></MentorRoute>} />
           <Route path="settings" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

@@ -27,6 +27,8 @@ import {
   ClipboardList,
   MessageSquareText,
   CreditCard,
+  Wallet,
+  Building2,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -42,6 +44,7 @@ const studentSidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/dashboard/roadmaps', icon: Route, label: 'Roadmaps' },
   { to: '/dashboard/interviews', icon: BotMessageSquare, label: 'Mock Interviews' },
+  { to: '/dashboard/tutor', icon: Sparkles, label: 'AI Coding Tutor' },
   { to: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { to: '/dashboard/mentors', icon: Users, label: 'Mentors' },
   { to: '/dashboard/billing', icon: CreditCard, label: 'Billing' },
@@ -52,6 +55,7 @@ const mentorSidebarLinks = [
   { to: '/dashboard/students', icon: Users, label: 'Students' },
   { to: '/dashboard/sessions', icon: ClipboardList, label: 'Sessions' },
   { to: '/dashboard/feedback', icon: MessageSquareText, label: 'Feedback' },
+  { to: '/dashboard/earnings', icon: Wallet, label: 'Earnings' },
 ];
 
 export default function MainLayout() {

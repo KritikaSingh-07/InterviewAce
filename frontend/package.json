@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@monaco-editor/react": "^4.7.0",
     "axios": "^1.7.9",
     "clsx": "^2.1.1",
     "framer-motion": "^11.18.2",
@@ -32,4 +33,3 @@
     "vite": "^6.0.5"
   }
 }
-
