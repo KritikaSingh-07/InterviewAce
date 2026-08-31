@@ -43,6 +43,11 @@ const mentorProfileSchema = new mongoose.Schema(
       required: [true, 'Bio is required'],
       trim: true,
     },
+    sessionRate: {
+      type: Number,
+      default: 50000, // ₹500 in paise
+      min: [10000, 'Minimum session rate is ₹100'],
+    },
   },
   {
     timestamps: true,

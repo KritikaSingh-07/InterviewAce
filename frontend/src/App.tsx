@@ -17,6 +17,8 @@ import MentorDashboard from './pages/dashboard/MentorDashboard';
 import MentorStudents from './pages/dashboard/MentorStudents';
 import MentorSessions from './pages/dashboard/MentorSessions';
 import MentorFeedback from './pages/dashboard/MentorFeedback';
+import MentorEarnings from './pages/dashboard/MentorEarnings';
+import MentorBankSettings from './pages/dashboard/MentorBankSettings';
 import ProfileSetup from './pages/ProfileSetup';
 import RoadmapGenerator from './pages/roadmap/RoadmapGenerator';
 import RoadmapDetail from './pages/roadmap/RoadmapDetail';
@@ -173,7 +175,9 @@ function App() {
           <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
           <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />
           <Route path="sessions" element={<MentorRoute><MentorSessions /></MentorRoute>} />
-<Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="earnings" element={<MentorRoute><MentorEarnings /></MentorRoute>} />
+          <Route path="bank-settings" element={<MentorRoute><MentorBankSettings /></MentorRoute>} />
           <Route path="settings" element={<Navigate to="/dashboard" replace />} />
         </Route>
 
