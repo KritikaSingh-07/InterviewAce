@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useThemeStore } from '../../store/themeStore';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
+import { connectSocket, disconnectSocket, getSocket } from '../../lib/socket';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
@@ -29,6 +30,8 @@ import {
   CreditCard,
   Wallet,
   Building2,
+  Calendar,
+  Trash2,
 } from 'lucide-react';
 
 interface NotificationItem {
@@ -38,6 +41,10 @@ interface NotificationItem {
   message: string;
   read: boolean;
   createdAt: string;
+  data?: {
+    sessionId?: string;
+    requestId?: string;
+  };
 }
 
 const studentSidebarLinks = [
@@ -52,7 +59,6 @@ const studentSidebarLinks = [
 
 const mentorSidebarLinks = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Overview' },
-  { to: '/dashboard/students', icon: Users, label: 'Students' },
   { to: '/dashboard/sessions', icon: ClipboardList, label: 'Sessions' },
   { to: '/dashboard/feedback', icon: MessageSquareText, label: 'Feedback' },
   { to: '/dashboard/earnings', icon: Wallet, label: 'Earnings' },
@@ -105,6 +111,54 @@ export default function MainLayout() {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
+  useEffect(() => {
+    if (user?.id) {
+      connectSocket(user.id);
+
+      const socket = getSocket();
+
+      // Listen for socket notification events
+      socket.on('notification:received', (newNotif: NotificationItem) => {
+        setNotifications((prev) => {
+          // Prevent duplicates
+          if (prev.some((n) => n._id === newNotif._id)) return prev;
+          return [newNotif, ...prev];
+        });
+        setUnreadCount((prev) => prev + 1);
+        toast(newNotif.title, {
+          icon: '🔔',
+          duration: 4000,
+          style: { fontWeight: '600' },
+        });
+      });
+
+      const handleUpdate = () => {
+        fetchNotifications();
+      };
+
+      socket.on('session:reminder', handleUpdate);
+      socket.on('session:request', handleUpdate);
+      socket.on('session:accepted', handleUpdate);
+      socket.on('session:rejected', handleUpdate);
+      socket.on('session:cancelled', handleUpdate);
+      socket.on('session:completed', handleUpdate);
+      socket.on('feedback:submitted', handleUpdate);
+
+      return () => {
+        socket.off('notification:received');
+        socket.off('session:reminder', handleUpdate);
+        socket.off('session:request', handleUpdate);
+        socket.off('session:accepted', handleUpdate);
+        socket.off('session:rejected', handleUpdate);
+        socket.off('session:cancelled', handleUpdate);
+        socket.off('session:completed', handleUpdate);
+        socket.off('feedback:submitted', handleUpdate);
+        disconnectSocket();
+      };
+    }
+  }, [user?.id, fetchNotifications]);
+
+
   const handleMarkAsRead = async (id: string) => {
     try {
       await api.patch(`/notifications/${id}/read`);
@@ -124,6 +178,22 @@ export default function MainLayout() {
       setUnreadCount(0);
     } catch (error) {
       console.error('Failed to mark all as read:', error);
+    }
+  };
+
+  const handleDeleteNotification = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    try {
+      const targetNotif = notifications.find((n) => n._id === id);
+      await api.delete(`/notifications/${id}`);
+      setNotifications((prev) => prev.filter((n) => n._id !== id));
+      if (targetNotif && !targetNotif.read) {
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+      }
+      toast.success('Notification deleted');
+    } catch (error) {
+      console.error('Failed to delete notification:', error);
+      toast.error('Failed to delete notification');
     }
   };
 
@@ -368,13 +438,23 @@ const isMentor = user?.role === 'mentor';
                               const isRoadmap = n.type === 'roadmap_generated';
                               const isInterview = n.type === 'interview_started' || n.type === 'interview_completed';
                               return (
-                                <button
-                                  key={n._id}
-                                  onClick={() => !n.read && handleMarkAsRead(n._id)}
-                                  className={`w-full text-left px-4 py-3 border-b border-gray-50 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 ${
-                                    !n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
-                                  }`}
-                                >
+                                  <div
+                                    key={n._id}
+                                    onClick={() => {
+                                      if (!n.read) handleMarkAsRead(n._id);
+                                      setNotifOpen(false);
+                                      if (isMentor) {
+                                        navigate('/dashboard/sessions');
+                                      } else if (n.data?.sessionId) {
+                                        navigate(`/dashboard/sessions/${n.data.sessionId}`);
+                                      } else {
+                                        navigate('/dashboard/sessions');
+                                      }
+                                    }}
+                                    className={`w-full text-left px-4 py-3 border-b border-gray-55 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 items-start cursor-pointer group relative ${
+                                      !n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
+                                    }`}
+                                  >
                                   <div className="mt-0.5 flex-shrink-0">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
                                       n.read ? 'bg-gray-100 dark:bg-gray-800' : (
@@ -403,10 +483,20 @@ const isMentor = user?.role === 'mentor';
                                       {timeAgo(n.createdAt)}
                                     </p>
                                   </div>
-                                  {!n.read && (
-                                    <span className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 mt-1.5 animate-pulse" />
-                                  )}
-                                </button>
+                                  <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                                    {!n.read && (
+                                      <span className="w-2 h-2 rounded-full bg-indigo-500 flex-shrink-0 animate-pulse" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      title="Delete notification"
+                                      onClick={(e) => handleDeleteNotification(e, n._id)}
+                                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </div>
                               );
                             })
                           )}

@@ -5,6 +5,7 @@ import Leaderboard from '../models/Leaderboard.js';
 import Profile from '../models/Profile.js';
 import Roadmap from '../models/Roadmap.js';
 import MentorProfile from '../models/MentorProfile.js';
+import SessionFeedback from '../models/SessionFeedback.js';
 
 // Allowed student plans for mentor view
 const ALLOWED_MENTOR_STUDENT_PLANS = ['pro', 'agency'];
@@ -435,6 +436,89 @@ const submitFeedback = async (req, res, next) => {
   }
 };
 
+// @desc    Get aggregated mentor feedback performance analytics (ONLY aggregate scores)
+// @route   GET /api/mentor/feedback-analytics
+// @access  Private (Mentor only)
+const getMentorFeedbackAnalytics = async (req, res, next) => {
+  try {
+    if (req.user.role !== 'mentor') {
+      return res.status(403).json({ error: 'Access denied. Mentor only.' });
+    }
+
+    const mentorId = req.user._id;
+
+    // Fetch all student feedback submitted for this mentor
+    const reviews = await SessionFeedback.find({
+      reviewee: mentorId,
+      role: 'student',
+    });
+
+    const totalFeedback = reviews.length;
+
+    if (totalFeedback === 0) {
+      return res.json({
+        overallScore: 0,
+        totalFeedback: 0,
+        categories: {
+          communication: 0,
+          explanation: 0,
+          technicalKnowledge: 0,
+          problemSolving: 0,
+          patience: 0,
+          professionalism: 0,
+          guidance: 0,
+        },
+      });
+    }
+
+    // Helper to calculate average category rating (1-5 scale) and convert to 0-100 score
+    const calcCategoryScore = (field, fallbackField = null) => {
+      let sum = 0;
+      let count = 0;
+
+      reviews.forEach((r) => {
+        const val = r[field] !== undefined && r[field] !== null
+          ? r[field]
+          : (fallbackField && r[fallbackField] !== undefined && r[fallbackField] !== null ? r[fallbackField] : null);
+
+        if (val && typeof val === 'number') {
+          sum += val;
+          count += 1;
+        }
+      });
+
+      if (count === 0) return 0;
+      const avgRating = sum / count;
+      return Math.round((avgRating / 5) * 100);
+    };
+
+    // Calculate overall score from overallRating
+    const overallRatingSum = reviews.reduce((acc, r) => acc + (r.overallRating || 0), 0);
+    const avgOverallRating = overallRatingSum / totalFeedback;
+    const overallScore = Math.round((avgOverallRating / 5) * 100);
+
+    const categories = {
+      communication: calcCategoryScore('communication'),
+      explanation: calcCategoryScore('explanation', 'knowledge'),
+      technicalKnowledge: calcCategoryScore('technicalKnowledge', 'knowledge'),
+      problemSolving: calcCategoryScore('problemSolving'),
+      patience: calcCategoryScore('patience'),
+      professionalism: calcCategoryScore('professionalism'),
+      guidance: calcCategoryScore('guidance', 'helpfulness'),
+    };
+
+    // PRIVACY GUARANTEE: Response contains ONLY aggregated stats.
+    // Absolutely NO studentName, studentId, comment, timestamps, or individual rating objects!
+    res.json({
+      overallScore,
+      totalFeedback,
+      categories,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export {
   getActiveStudents,
   getStudentById,
@@ -442,6 +526,5 @@ export {
   getMentorInterviews,
   getMentorInterviewById,
   submitFeedback,
+  getMentorFeedbackAnalytics,
 };
-
-

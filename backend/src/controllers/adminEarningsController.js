@@ -7,7 +7,7 @@ import MentorLedger from '../models/MentorLedger.js';
 export const getAllMentorWallets = async (req, res, next) => {
   try {
     const wallets = await MentorWallet.find().populate('mentor', 'email');
-    
+
     const mentorIds = wallets.map(w => w.mentor?._id).filter(Boolean);
     const profiles = await MentorProfile.find({ userId: { $in: mentorIds } });
 
@@ -83,7 +83,7 @@ export const rejectWithdrawal = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
-    
+
     const withdrawal = await WithdrawalRequest.findById(id);
 
     if (!withdrawal) {

@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import { emitToUser } from '../services/socketService.js';
 
 // @desc    Get current user's notifications
 // @route   GET /api/notifications
@@ -59,20 +60,51 @@ const markAllAsRead = async (req, res, next) => {
   }
 };
 
+// @desc    Delete a single notification
+// @route   DELETE /api/notifications/:id
+// @access  Private
+const deleteNotification = async (req, res, next) => {
+  try {
+    const notification = await Notification.findById(req.params.id);
+
+    if (!notification) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+
+    // Verify notification belongs to the authenticated user
+    if (notification.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Access denied. You can only delete your own notifications.' });
+    }
+
+    await Notification.deleteOne({ _id: req.params.id });
+
+    res.json({ message: 'Notification deleted successfully', id: req.params.id });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Helper: create a notification (used internally by other controllers)
 const createNotification = async ({ userId, type, title, message, referenceId, referenceModel }) => {
   try {
-    await Notification.create({
+    const notif = await Notification.create({
       user: userId,
+      recipient: userId, // Set both for compatibility
       type,
       title,
       message,
       referenceId,
       referenceModel,
     });
+
+    try {
+      emitToUser(userId, 'notification:received', notif);
+    } catch (err) {
+      console.error('Failed to emit socket notification:', err);
+    }
   } catch (error) {
     console.error('Failed to create notification:', error.message);
   }
 };
 
-export { getNotifications, markAsRead, markAllAsRead, createNotification };
+export { getNotifications, markAsRead, markAllAsRead, deleteNotification, createNotification };

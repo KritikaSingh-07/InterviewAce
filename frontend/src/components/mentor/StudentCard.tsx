@@ -17,7 +17,7 @@ import { MentorStudent } from '../../types';
 interface StudentCardProps {
   student: MentorStudent;
   onSelect: (student: MentorStudent) => void;
-  onSchedule: (student: MentorStudent) => void;
+  onSchedule?: (student: MentorStudent) => void;
   index?: number;
 }
 
@@ -192,17 +192,19 @@ export const StudentCard: React.FC<StudentCardProps> = ({
           View Profile <ChevronRight className="w-3.5 h-3.5" />
         </button>
 
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSchedule(student);
-          }}
-          className="inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all active:scale-[0.98]"
-        >
-          <CalendarClock className="w-3.5 h-3.5" />
-          Schedule
-        </button>
+        {onSchedule && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSchedule(student);
+            }}
+            className="inline-flex items-center justify-center gap-1.5 py-2 px-3.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-xs font-semibold shadow-md shadow-violet-500/20 hover:shadow-lg transition-all active:scale-[0.98]"
+          >
+            <CalendarClock className="w-3.5 h-3.5" />
+            Schedule
+          </button>
+        )}
       </div>
     </motion.div>
   );

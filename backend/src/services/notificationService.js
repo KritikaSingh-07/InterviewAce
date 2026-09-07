@@ -1,4 +1,5 @@
 import Notification from '../models/Notification.js';
+import { emitToUser } from './socketService.js';
 
 /**
  * Creates and persists a system notification for a recipient.
@@ -17,11 +18,18 @@ export const createNotification = async ({ recipient, type = 'system', title, me
 
   const notification = await Notification.create({
     recipient,
+    user: recipient, // Set both user and recipient for absolute compatibility
     type,
     title,
     message,
     data,
   });
+
+  try {
+    emitToUser(recipient, 'notification:received', notification);
+  } catch (err) {
+    console.error('Failed to emit socket notification:', err);
+  }
 
   return notification;
 };

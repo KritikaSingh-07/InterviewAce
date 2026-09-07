@@ -721,7 +721,7 @@ export default function MentorEarnings() {
       </AnimatePresence>
 
       <WithdrawModal isOpen={isWithdrawOpen} onClose={() => setIsWithdrawOpen(false)} />
-      
+
       <EarningsAnalyticsModal
         isOpen={analyticsModalOpen}
         onClose={() => setAnalyticsModalOpen(false)}

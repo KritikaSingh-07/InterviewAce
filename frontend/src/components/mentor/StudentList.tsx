@@ -10,7 +10,7 @@ interface StudentListProps {
   searchQuery: string;
   selectedPlanFilter: string;
   onSelectStudent: (student: MentorStudent) => void;
-  onScheduleStudent: (student: MentorStudent) => void;
+  onScheduleStudent?: (student: MentorStudent) => void;
   onClearFilters?: () => void;
 }
 

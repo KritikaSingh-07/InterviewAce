@@ -38,7 +38,7 @@ const UPI_PROVIDERS: Record<string, { name: string; badge: string; color: string
  */
 export function validateUpiId(upiId: string): UpiValidationResult {
   const trimmed = (upiId || '').trim().toLowerCase();
-  
+
   if (!trimmed) {
     return {
       isValid: false,
@@ -102,7 +102,7 @@ export function validateUpiId(upiId: string): UpiValidationResult {
   }
 
   const knownProvider = UPI_PROVIDERS[handle];
-  
+
   if (knownProvider) {
     return {
       isValid: true,

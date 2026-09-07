@@ -32,7 +32,7 @@ interface StudentDetailModalProps {
   student: MentorStudent | null;
   isOpen: boolean;
   onClose: () => void;
-  onScheduleInterview: (student: MentorStudent) => void;
+  onScheduleInterview?: (student: MentorStudent) => void;
 }
 
 export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
@@ -475,16 +475,18 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({
               Close
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onScheduleInterview(data);
-              }}
-              className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-[0.98]"
-            >
-              <CalendarClock className="w-4 h-4" /> Schedule Mock Interview
-            </button>
+            {onScheduleInterview && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onScheduleInterview(data);
+                }}
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white text-sm font-semibold shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 transition-all active:scale-[0.98]"
+              >
+                <CalendarClock className="w-4 h-4" /> Schedule Mock Interview
+              </button>
+            )}
           </div>
         </motion.div>
       </div>

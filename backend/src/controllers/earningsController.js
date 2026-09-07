@@ -30,7 +30,7 @@ export const getTransactions = async (req, res, next) => {
     const page = parseInt(req.query.page, 10) || 1;
     const limit = parseInt(req.query.limit, 10) || 20;
     const skip = (page - 1) * limit;
-    
+
     const query = { mentor: req.user._id };
     if (req.query.type) query.type = req.query.type;
     if (req.query.status) query.status = req.query.status;
@@ -46,7 +46,7 @@ export const getTransactions = async (req, res, next) => {
     // Fetch student profiles for names
     const studentIds = ledgers.map(l => l.student?._id).filter(Boolean);
     const studentProfiles = await StudentProfile.find({ userId: { $in: studentIds } });
-    
+
     const transactions = ledgers.map(ledger => {
       const sp = studentProfiles.find(p => p.userId.toString() === ledger.student?._id?.toString());
       return {
@@ -75,12 +75,12 @@ export const getChart = async (req, res, next) => {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
 
     const aggregation = await MentorLedger.aggregate([
-      { 
-        $match: { 
-          mentor: req.user._id, 
-          type: 'session_earning', 
-          createdAt: { $gte: sixMonthsAgo } 
-        } 
+      {
+        $match: {
+          mentor: req.user._id,
+          type: 'session_earning',
+          createdAt: { $gte: sixMonthsAgo }
+        }
       },
       {
         $group: {

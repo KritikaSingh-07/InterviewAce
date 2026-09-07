@@ -8,7 +8,7 @@ import { creditEarning, handlePayoutSuccess, handlePayoutFailure, handleRefund }
 export const createSessionOrder = async (req, res, next) => {
   try {
     const { mentorId } = req.body;
-    
+
     const mentorProfile = await MentorProfile.findOne({ userId: mentorId });
     if (!mentorProfile || !mentorProfile.sessionRate) {
       return res.status(400).json({ error: 'Mentor not found or no session rate set' });
@@ -17,21 +17,21 @@ export const createSessionOrder = async (req, res, next) => {
     const sessionRate = mentorProfile.sessionRate;
     const split = calculateSplit(sessionRate);
 
-    const razorpay = new Razorpay({ 
-      key_id: process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_TEST_API_KEY, 
-      key_secret: process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_TEST_KEY_SECRET 
+    const razorpay = new Razorpay({
+      key_id: process.env.RAZORPAY_KEY_ID || process.env.RAZORPAY_TEST_API_KEY,
+      key_secret: process.env.RAZORPAY_KEY_SECRET || process.env.RAZORPAY_TEST_KEY_SECRET
     });
 
     const receipt = `sess_${mentorId}_${req.user._id}_${Date.now()}`.slice(0, 40);
-    const order = await razorpay.orders.create({ 
-      amount: sessionRate, 
-      currency: 'INR', 
-      receipt, 
-      notes: { 
-        type: 'session_payment', 
-        mentorId: String(mentorId), 
-        studentId: String(req.user._id) 
-      } 
+    const order = await razorpay.orders.create({
+      amount: sessionRate,
+      currency: 'INR',
+      receipt,
+      notes: {
+        type: 'session_payment',
+        mentorId: String(mentorId),
+        studentId: String(req.user._id)
+      }
     });
 
     await SessionPayment.create({
@@ -45,15 +45,15 @@ export const createSessionOrder = async (req, res, next) => {
       status: 'created',
     });
 
-    res.json({ 
-      orderId: order.id, 
-      amount: order.amount, 
-      currency: order.currency, 
-      keyId: getRazorpayKeyId(), 
-      mentor: { 
-        name: mentorProfile.fullName, 
-        sessionRate 
-      } 
+    res.json({
+      orderId: order.id,
+      amount: order.amount,
+      currency: order.currency,
+      keyId: getRazorpayKeyId(),
+      mentor: {
+        name: mentorProfile.fullName,
+        sessionRate
+      }
     });
   } catch (error) {
     next(error);
@@ -73,10 +73,10 @@ export const verifySessionPayment = async (req, res, next) => {
       return res.status(404).json({ error: 'Payment not found' });
     }
 
-    const isValid = verifyPaymentSignature({ 
-      orderId: razorpay_order_id, 
-      paymentId: razorpay_payment_id, 
-      signature: razorpay_signature 
+    const isValid = verifyPaymentSignature({
+      orderId: razorpay_order_id,
+      paymentId: razorpay_payment_id,
+      signature: razorpay_signature
     });
 
     if (isValid) {

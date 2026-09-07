@@ -3,68 +3,50 @@ import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import {
-  MessageSquareText,
-  Star,
-  Download,
-  UserCircle2,
+  Award,
+  MessageSquare,
+  Sparkles,
+  ShieldCheck,
+  Zap,
+  BookOpen,
+  HeartHandshake,
+  Users,
   CheckCircle2,
-  TrendingUp,
 } from 'lucide-react';
-import { MentorInterviewSession } from '../../types';
+
+interface FeedbackAnalytics {
+  overallScore: number;
+  totalFeedback: number;
+  categories: {
+    communication: number;
+    explanation: number;
+    technicalKnowledge: number;
+    problemSolving: number;
+    patience: number;
+    professionalism: number;
+    guidance: number;
+  };
+}
 
 export default function MentorFeedback() {
-  const [interviews, setInterviews] = useState<MentorInterviewSession[]>([]);
+  const [analytics, setAnalytics] = useState<FeedbackAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchInterviews = async () => {
+  const fetchAnalytics = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/mentor/interviews');
-      setInterviews(data.interviews || []);
+      const { data } = await api.get('/mentor/feedback-analytics');
+      setAnalytics(data);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to load feedback');
+      toast.error(error.response?.data?.error || 'Failed to load mentor feedback analytics');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInterviews();
+    fetchAnalytics();
   }, []);
-
-  const completed = interviews.filter((i) => i.status === 'completed');
-  const avgRating = completed.length
-    ? (completed.reduce((s, i) => s + (i.rating || i.totalScore || 0), 0) / completed.length).toFixed(0)
-    : 0;
-
-  const exportFeedback = (interview: MentorInterviewSession) => {
-    const content = [
-      `INTERVIEWACE - MENTOR FEEDBACK REPORT`,
-      `========================================`,
-      `Student: ${interview.studentName || 'N/A'}`,
-      `Interview Type: ${interview.type}`,
-      `Date: ${new Date(interview.scheduledAt || interview.createdAt).toLocaleString()}`,
-      `Duration: ${interview.duration} min`,
-      `Rating: ${interview.rating ?? interview.totalScore ?? 'N/A'}/100`,
-      ``,
-      `Mentor Suggestions:`,
-      interview.suggestions || 'No suggestions provided',
-      ``,
-      `Strengths:`,
-      interview.mentorFeedback?.strengths?.join('\n') || 'N/A',
-      ``,
-      `Areas to Improve:`,
-      interview.mentorFeedback?.areasToImprove?.join('\n') || 'N/A',
-    ].join('\n');
-
-    const blob = new Blob([content], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `feedback-${interview.studentName || 'student'}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
 
   if (loading) {
     return (
@@ -74,121 +56,173 @@ export default function MentorFeedback() {
     );
   }
 
+  const overallScore = analytics?.overallScore || 0;
+  const totalFeedback = analytics?.totalFeedback || 0;
+  const categories = analytics?.categories || {
+    communication: 0,
+    explanation: 0,
+    technicalKnowledge: 0,
+    problemSolving: 0,
+    patience: 0,
+    professionalism: 0,
+    guidance: 0,
+  };
+
+  const categoryList = [
+    { key: 'communication', label: 'Communication', score: categories.communication, icon: MessageSquare, color: 'from-indigo-500 to-violet-500' },
+    { key: 'explanation', label: 'Explanation', score: categories.explanation, icon: BookOpen, color: 'from-purple-500 to-pink-500' },
+    { key: 'technicalKnowledge', label: 'Technical Knowledge', score: categories.technicalKnowledge, icon: Zap, color: 'from-blue-500 to-indigo-500' },
+    { key: 'problemSolving', label: 'Problem Solving', score: categories.problemSolving, icon: Sparkles, color: 'from-amber-500 to-orange-500' },
+    { key: 'patience', label: 'Patience', score: categories.patience, icon: HeartHandshake, color: 'from-teal-500 to-emerald-500' },
+    { key: 'professionalism', label: 'Professionalism', score: categories.professionalism, icon: ShieldCheck, color: 'from-violet-500 to-purple-600' },
+    { key: 'guidance', label: 'Guidance', score: categories.guidance, icon: Award, color: 'from-rose-500 to-pink-600' },
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-5xl mx-auto">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-8"
+        className="glass-card p-8 flex flex-col md:flex-row md:items-center justify-between gap-6"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600">
-            <MessageSquareText className="w-6 h-6 text-white" />
+        <div className="flex items-center gap-4">
+          <div className="p-3.5 rounded-2xl bg-gradient-to-br from-indigo-600 to-violet-600 shadow-lg shadow-indigo-500/20">
+            <Award className="w-7 h-7 text-white" />
           </div>
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Feedback Log</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">Detailed feedback provided for completed sessions</p>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Overall Mentor Feedback
+            </h1>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-0.5">
+              Aggregated performance metrics based on student session evaluations
+            </p>
           </div>
-          <div className="text-right">
-            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{avgRating}/100</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">Avg Rating</div>
-          </div>
+        </div>
+        <div className="flex items-center gap-2 bg-indigo-50 dark:bg-indigo-500/10 px-4 py-2 rounded-xl border border-indigo-100 dark:border-indigo-500/20">
+          <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300">
+            {totalFeedback} Submissions
+          </span>
         </div>
       </motion.div>
 
-      {completed.length > 0 ? (
-        <div className="space-y-4">
-          {completed.map((interview, i) => (
-            <motion.div
-              key={interview._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: Math.min(i * 0.05, 0.5) }}
-              className="glass-card p-6"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center shrink-0">
-                  <UserCircle2 className="w-7 h-7 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-bold text-gray-900 dark:text-white">{interview.studentName}</p>
-                    <span className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-xs font-medium">
-                      {interview.type}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {new Date(interview.scheduledAt || interview.createdAt).toLocaleString()}
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <div className="flex items-center gap-1 font-bold text-gray-900 dark:text-white">
-                    <Star className="w-5 h-5 text-amber-400" />
-                    {interview.rating ?? interview.totalScore ?? 'N/A'}
-                    <span className="text-xs text-gray-400">/100</span>
-                  </div>
-                  <button
-                    onClick={() => exportFeedback(interview)}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Download className="w-3.5 h-3.5" /> Export
-                  </button>
-                </div>
-              </div>
+      {/* Main Score & Analytics Overview */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Strengths</h4>
-                  </div>
-                  {interview.mentorFeedback?.strengths?.length ? (
-                    <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                      {interview.mentorFeedback.strengths.map((s, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-emerald-500 mt-0.5">•</span> {s}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-400">No strengths listed</p>
-                  )}
-                </div>
+        {/* Circular Overall Score Card */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card p-8 flex flex-col items-center justify-center text-center relative overflow-hidden"
+        >
+          <div className="absolute -top-12 -right-12 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+          <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-violet-500/10 rounded-full blur-2xl pointer-events-none" />
 
-                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-800/40 border border-gray-100 dark:border-gray-800">
-                  <div className="flex items-center gap-2 mb-2">
-                    <TrendingUp className="w-4 h-4 text-amber-500" />
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Areas to Improve</h4>
-                  </div>
-                  {interview.mentorFeedback?.areasToImprove?.length ? (
-                    <ul className="space-y-1 text-sm text-gray-600 dark:text-gray-300">
-                      {interview.mentorFeedback.areasToImprove.map((s, idx) => (
-                        <li key={idx} className="flex items-start gap-1.5">
-                          <span className="text-amber-500 mt-0.5">•</span> {s}
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-sm text-gray-400">No areas listed</p>
-                  )}
-                </div>
-              </div>
+          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-6">
+            Overall Score
+          </h2>
 
-              <div className="mt-4 p-4 rounded-xl bg-violet-50 dark:bg-violet-500/5 border border-violet-100 dark:border-violet-500/10">
-                <h4 className="text-sm font-semibold text-violet-700 dark:text-violet-400 mb-2">Mentor Suggestions</h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                  {interview.suggestions || 'No suggestions provided'}
-                </p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16 glass-card">
-          <MessageSquareText className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-sm">No feedback provided yet</p>
-        </div>
-      )}
+          {/* Circular Score Gauge */}
+          <div className="relative w-44 h-44 flex items-center justify-center mb-6">
+            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+              <circle
+                cx="50"
+                cy="50"
+                r="42"
+                stroke="currentColor"
+                strokeWidth="8"
+                className="text-gray-150 dark:text-gray-800"
+                fill="transparent"
+              />
+              <circle
+                cx="50"
+                cy="50"
+                r="42"
+                stroke="url(#gradient)"
+                strokeWidth="8"
+                strokeDasharray={2 * Math.PI * 42}
+                strokeDashoffset={2 * Math.PI * 42 * (1 - overallScore / 100)}
+                strokeLinecap="round"
+                fill="transparent"
+                className="transition-all duration-1000 ease-out"
+              />
+              <defs>
+                <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#6366f1" />
+                  <stop offset="100%" stopColor="#8b5cf6" />
+                </linearGradient>
+              </defs>
+            </svg>
+
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className="text-4xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                {overallScore}
+              </span>
+              <span className="text-xs font-bold text-gray-400">/ 100</span>
+            </div>
+          </div>
+
+          <div className="space-y-1">
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              Overall Performance
+            </h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xs">
+              Based on {totalFeedback} student feedback submission{totalFeedback === 1 ? '' : 's'}
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Category Breakdown Progress Bars */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="col-span-1 lg:col-span-2 glass-card p-8 space-y-6"
+        >
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 pb-4">
+            <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-indigo-500" />
+              Category Metrics Breakdown
+            </h2>
+            <span className="text-xs font-semibold text-gray-400">Scores out of 100</span>
+          </div>
+
+          <div className="space-y-5">
+            {categoryList.map((cat, index) => {
+              const IconComp = cat.icon;
+              return (
+                <div key={cat.key} className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+                        <IconComp className="w-4 h-4 text-indigo-500" />
+                      </div>
+                      <span className="font-semibold text-gray-800 dark:text-gray-200">
+                        {cat.label}
+                      </span>
+                    </div>
+                    <div className="font-bold text-gray-900 dark:text-white text-sm">
+                      {cat.score} <span className="text-xs text-gray-400 font-normal">/ 100</span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar Container */}
+                  <div className="h-3 w-full bg-gray-150 dark:bg-gray-800 rounded-full overflow-hidden p-0.5">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${cat.score}%` }}
+                      transition={{ duration: 0.8, delay: index * 0.05 }}
+                      className={`h-full rounded-full bg-gradient-to-r ${cat.color}`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </motion.div>
+
+      </div>
     </div>
   );
 }

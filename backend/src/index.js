@@ -26,6 +26,10 @@ import adminEarningsRoutes from './routes/adminEarningsRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
 import tutorRoutes from './routes/tutorRoutes.js';
 import { startSettlementCron } from './services/settlementCron.js';
+import sessionRoutes from './routes/sessionRoutes.js';
+import http from 'http';
+import { initSocket } from './services/socketService.js';
+import { startReminderScheduler } from './services/meetingReminderService.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -86,6 +90,8 @@ app.use('/api/earnings', earningsRoutes);
 app.use('/api/session-payments', sessionPaymentRoutes);
 app.use('/api/admin/earnings', adminEarningsRoutes);
 app.use('/api/tutor', tutorRoutes);
+app.use('/api/sessions', sessionRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -95,8 +101,12 @@ app.get('/api/health', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server wrap
+const server = http.createServer(app);
+initSocket(server);
+startReminderScheduler();
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 

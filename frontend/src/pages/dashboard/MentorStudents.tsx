@@ -15,7 +15,6 @@ import api from '../../lib/api';
 import { MentorStudent } from '../../types';
 import StudentList from '../../components/mentor/StudentList';
 import StudentDetailModal from '../../components/mentor/StudentDetailModal';
-import MentorScheduleModal from '../../components/mentor/MentorScheduleModal';
 
 type PlanFilter = 'all' | 'pro' | 'agency';
 
@@ -28,8 +27,6 @@ export default function MentorStudents() {
   // Modal states
   const [selectedStudent, setSelectedStudent] = useState<MentorStudent | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
-  const [scheduleTarget, setScheduleTarget] = useState<MentorStudent | null>(null);
-  const [isScheduleOpen, setIsScheduleOpen] = useState(false);
 
   const fetchStudents = async (planType?: string) => {
     setLoading(true);
@@ -53,12 +50,6 @@ export default function MentorStudents() {
   const handleSelectStudent = (student: MentorStudent) => {
     setSelectedStudent(student);
     setIsDetailOpen(true);
-  };
-
-  // Handle schedule action click -> Open schedule modal
-  const handleScheduleStudent = (student: MentorStudent) => {
-    setScheduleTarget(student);
-    setIsScheduleOpen(true);
   };
 
   // Real-time client search filter
@@ -187,7 +178,6 @@ export default function MentorStudents() {
         searchQuery={search}
         selectedPlanFilter={planFilter}
         onSelectStudent={handleSelectStudent}
-        onScheduleStudent={handleScheduleStudent}
         onClearFilters={() => {
           setSearch('');
           setPlanFilter('all');
@@ -201,24 +191,6 @@ export default function MentorStudents() {
         onClose={() => {
           setIsDetailOpen(false);
           setSelectedStudent(null);
-        }}
-        onScheduleInterview={(student) => {
-          setIsDetailOpen(false);
-          handleScheduleStudent(student);
-        }}
-      />
-
-      {/* Schedule Interview Modal */}
-      <MentorScheduleModal
-        isOpen={isScheduleOpen}
-        onClose={() => {
-          setIsScheduleOpen(false);
-          setScheduleTarget(null);
-        }}
-        students={students}
-        selectedStudent={scheduleTarget}
-        onScheduled={() => {
-          fetchStudents(planFilter);
         }}
       />
     </div>

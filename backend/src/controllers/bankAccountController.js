@@ -144,7 +144,7 @@ export const verifyBankAccount = async (req, res, next) => {
 
     // If simulated mode for testing or if no validation capability
     // const status = await validateFundAccount(bankAccount.razorpayFundAccountId);
-    
+
     bankAccount.isVerified = true;
     bankAccount.verificationStatus = 'verified';
     bankAccount.verifiedAt = new Date();

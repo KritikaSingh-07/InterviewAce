@@ -6,7 +6,14 @@ import {
   getMentorInterviews,
   getMentorInterviewById,
   submitFeedback,
+  getMentorFeedbackAnalytics,
 } from '../controllers/mentorController.js';
+import {
+  getMyAvailability,
+  createAvailability,
+  updateAvailability,
+  deleteAvailability,
+} from '../controllers/availabilityController.js';
 import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -19,5 +26,13 @@ router.get('/interviews', protect, getMentorInterviews);
 router.get('/interviews/:id', protect, getMentorInterviewById);
 router.post('/interviews/:id/feedback', protect, submitFeedback);
 
-export default router;
+// Aggregated Mentor Feedback Analytics (SYSTEM 2)
+router.get('/feedback-analytics', protect, getMentorFeedbackAnalytics);
 
+// Availability endpoints
+router.get('/availability', protect, getMyAvailability);
+router.post('/availability', protect, createAvailability);
+router.put('/availability/:id', protect, updateAvailability);
+router.delete('/availability/:id', protect, deleteAvailability);
+
+export default router;

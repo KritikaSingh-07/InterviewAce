@@ -109,7 +109,7 @@ export default function MentorBankSettings() {
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Current Payout Method</h2>
             {renderStatus()}
           </div>
-          
+
           <div className="grid sm:grid-cols-2 gap-6 bg-gray-50 dark:bg-gray-800/50 p-6 rounded-xl border border-gray-100 dark:border-gray-700/50">
             <div>
               <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Account Holder</p>

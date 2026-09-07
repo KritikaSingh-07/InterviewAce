@@ -1,6 +1,9 @@
 import express from 'express';
 import {
   getMentors,
+  getMentorById,
+  getMentorAvailabilityForDate,
+  getMentorWeeklyAvailability,
   createInterviewRequest,
   getMyRequests,
   requireMentorPlan,
@@ -14,6 +17,9 @@ router.use(protect);
 router.use(requireMentorPlan);
 
 router.get('/', getMentors);
+router.get('/:id', getMentorById);
+router.get('/:id/availability', getMentorAvailabilityForDate);
+router.get('/:id/weekly-availability', getMentorWeeklyAvailability);
 router.post('/requests', createInterviewRequest);
 router.get('/my-requests', getMyRequests);
 
