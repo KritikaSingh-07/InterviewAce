@@ -17,6 +17,8 @@ import MentorDashboard from './pages/dashboard/MentorDashboard';
 import MentorStudents from './pages/dashboard/MentorStudents';
 import MentorSessions from './pages/dashboard/MentorSessions';
 import MentorFeedback from './pages/dashboard/MentorFeedback';
+import MentorEarnings from './pages/dashboard/MentorEarnings';
+import MentorBankSettings from './pages/dashboard/MentorBankSettings';
 import ProfileSetup from './pages/ProfileSetup';
 import RoadmapGenerator from './pages/roadmap/RoadmapGenerator';
 import RoadmapDetail from './pages/roadmap/RoadmapDetail';
@@ -27,6 +29,10 @@ import Mentors from './pages/Mentors';
 import BillingPage from './pages/BillingPage';
 import TutorProblems from './pages/tutor/TutorProblems';
 import CodingSandbox from './pages/tutor/CodingSandbox';
+import MentorDetail from './pages/MentorDetail';
+import SessionsDashboard from './pages/SessionsDashboard';
+import SessionDetailPage from './pages/SessionDetailPage';
+import SessionFeedbackPage from './pages/SessionFeedbackPage';
 
 // Onboarding Pages
 import RoleSelectionPage from './pages/onboarding/RoleSelectionPage';
@@ -174,10 +180,17 @@ function App() {
           <Route path="tutor/:id" element={<StudentRoute><CodingSandbox /></StudentRoute>} />
           <Route path="leaderboard" element={<StudentRoute><Leaderboard /></StudentRoute>} />
           <Route path="mentors" element={<MentorSectionRoute><Mentors /></MentorSectionRoute>} />
+          <Route path="mentors/:id" element={<MentorSectionRoute><MentorDetail /></MentorSectionRoute>} />
           <Route path="billing" element={<StudentRoute><BillingPage /></StudentRoute>} />
           <Route path="students" element={<MentorRoute><MentorStudents /></MentorRoute>} />
-          <Route path="sessions" element={<MentorRoute><MentorSessions /></MentorRoute>} />
-<Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="sessions" element={<SessionsDashboard />} />
+          <Route path="sessions/:id" element={<SessionDetailPage />} />
+          <Route path="sessions/:id/feedback" element={<SessionFeedbackPage />} />
+          <Route path="mentor-sessions" element={<Navigate to="/dashboard/sessions" replace />} />
+          <Route path="availability" element={<Navigate to="/dashboard/sessions" replace />} />
+          <Route path="feedback" element={<MentorRoute><MentorFeedback /></MentorRoute>} />
+          <Route path="earnings" element={<MentorRoute><MentorEarnings /></MentorRoute>} />
+          <Route path="bank-settings" element={<MentorRoute><MentorBankSettings /></MentorRoute>} />
           <Route path="settings" element={<Navigate to="/dashboard" replace />} />
         </Route>
 

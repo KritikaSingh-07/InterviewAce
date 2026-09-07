@@ -29,6 +29,7 @@ import {
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import MarkdownRenderer from '../../components/tutor/MarkdownRenderer';
+import Modal from '../../components/ui/Modal';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -878,39 +879,14 @@ export default function CodingSandbox() {
       </div>
 
       {/* ── Editor Preferences Modal ──────────────────────────────────────── */}
-      <AnimatePresence>
-        {showPrefsModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={() => setShowPrefsModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-800 w-full max-w-sm p-6 space-y-5"
-            >
-              <div className="flex items-center justify-between">
-                <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Settings className="w-4 h-4 text-indigo-500" />
-                  Editor Settings
-                </h3>
-                <button
-                  onClick={() => setShowPrefsModal(false)}
-                  className="p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg text-gray-500 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              <PrefsForm prefs={prefs} onSave={handleSavePrefs} onCancel={() => setShowPrefsModal(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Modal
+        isOpen={showPrefsModal}
+        onClose={() => setShowPrefsModal(false)}
+        title="Editor Settings"
+        maxWidth="max-w-sm"
+      >
+        <PrefsForm prefs={prefs} onSave={handleSavePrefs} onCancel={() => setShowPrefsModal(false)} />
+      </Modal>
     </div>
   );
 }

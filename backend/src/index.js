@@ -20,14 +20,24 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import mentorRoutes from './routes/mentorRoutes.js';
 import mentorSectionRoutes from './routes/mentorSectionRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
+import earningsRoutes from './routes/earningsRoutes.js';
+import sessionPaymentRoutes from './routes/sessionPaymentRoutes.js';
+import adminEarningsRoutes from './routes/adminEarningsRoutes.js';
 import { handleWebhook } from './controllers/paymentController.js';
 import tutorRoutes from './routes/tutorRoutes.js';
+import { startSettlementCron } from './services/settlementCron.js';
+import sessionRoutes from './routes/sessionRoutes.js';
+import http from 'http';
+import { initSocket } from './services/socketService.js';
+import { startReminderScheduler } from './services/meetingReminderService.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Connect to database
-connectDB();
+// Connect to database, then start background jobs
+connectDB().then(() => {
+  startSettlementCron();
+});
 
 // Security middleware
 app.use(helmet());
@@ -51,6 +61,11 @@ app.post(
   handleWebhook
 );
 
+app.use('/api/session-payments/webhook', express.raw({ type: 'application/json' }));
+
+const withdrawalLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Too many withdrawal requests, please try again later' } });
+app.use('/api/earnings/withdraw', withdrawalLimiter);
+
 // Body parsing
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -71,7 +86,12 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/mentor', mentorRoutes);
 app.use('/api/mentors', mentorSectionRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/earnings', earningsRoutes);
+app.use('/api/session-payments', sessionPaymentRoutes);
+app.use('/api/admin/earnings', adminEarningsRoutes);
 app.use('/api/tutor', tutorRoutes);
+app.use('/api/sessions', sessionRoutes);
+
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -81,8 +101,12 @@ app.get('/api/health', (req, res) => {
 // Error handler
 app.use(errorHandler);
 
-// Start server
-app.listen(PORT, () => {
+// Start server wrap
+const server = http.createServer(app);
+initSocket(server);
+startReminderScheduler();
+
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 

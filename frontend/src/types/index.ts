@@ -284,6 +284,10 @@ export interface InterviewFormData {
 export interface MentorStudent {
   _id: string;
   email: string;
+  plan: Plan;
+  planName?: string;
+  planStartedAt?: string | null;
+  planExpiresAt?: string | null;
   profileImage?: string | null;
   profileImagePublicId?: string | null;
   fullName: string;
@@ -294,11 +298,67 @@ export interface MentorStudent {
   careerGoal: string;
   targetCompanies: string[];
   selfAssessment: Record<string, number>;
+  bio?: string;
+  skills?: Array<{ name: string; level?: string } | string>;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  yearsOfExperience?: number;
   score: number;
   totalPoints: number;
   weeklyPoints: number;
+  rank?: number;
   interviewsCompleted: number;
+  codingPreferences?: {
+    language?: string;
+    dailyGoal?: number;
+    weeklyGoal?: number;
+    targetCompanies?: string[];
+  };
 }
+
+export interface StudentDetailProfile extends MentorStudent {
+  resumeUrl?: string;
+  streak?: {
+    current: number;
+    longest: number;
+  };
+  badges?: Badge[];
+  roadmaps?: Array<{
+    _id: string;
+    targetRole: string;
+    careerBio?: string;
+    progress?: {
+      totalTasks: number;
+      completedTasks: number;
+      percentage: number;
+    };
+    status: string;
+    durationWeeks: number;
+    createdAt: string;
+  }>;
+  mockInterviews?: Array<{
+    _id: string;
+    role: string;
+    type: string;
+    duration: number;
+    rating?: number | null;
+    totalScore: number;
+    status: string;
+    scheduledAt?: string | null;
+    createdAt: string;
+    mentorFeedback?: {
+      strengths?: string[];
+      areasToImprove?: string[];
+    };
+    suggestions?: string;
+    mentor?: {
+      _id: string;
+      email: string;
+    };
+  }>;
+  joinedAt?: string;
+}
+
 
 export interface MentorInterviewSession {
   _id: string;
@@ -407,5 +467,87 @@ export interface PaginatedResponse<T> {
     total: number;
     pages: number;
   };
+}
+
+// ==================== MENTOR EARNINGS ====================
+export interface WalletSummary {
+  totalEarned: number;
+  availableBalance: number;
+  pendingBalance: number;
+  withdrawnAmount: number;
+  formatted: {
+    totalEarned: string;
+    availableBalance: string;
+    pendingBalance: string;
+    withdrawnAmount: string;
+  };
+}
+
+export interface LedgerEntry {
+  _id: string;
+  type: 'session_earning' | 'refund_debit' | 'withdrawal' | 'adjustment';
+  amount: number;
+  mentorShare: number;
+  platformShare: number;
+  grossAmount: number;
+  status: 'pending' | 'settled' | 'withdrawn' | 'reversed';
+  sessionPayment?: {
+    _id: string;
+    orderId: string;
+    invoiceId?: string;
+  };
+  student?: {
+    _id: string;
+    email: string;
+  };
+  studentName?: string;
+  description: string;
+  settlesAt?: string;
+  settledAt?: string;
+  createdAt: string;
+}
+
+export interface WithdrawalRequest {
+  _id: string;
+  amount: number;
+  status: 'requested' | 'approved' | 'processing' | 'success' | 'failed' | 'cancelled';
+  bankSnapshot: {
+    accountNumberMasked: string;
+    ifsc: string;
+    accountHolderName: string;
+    bankName: string;
+  };
+  payoutId?: string;
+  utr?: string;
+  failureReason?: string;
+  rejectionReason?: string;
+  createdAt: string;
+  completedAt?: string;
+  approvedAt?: string;
+}
+
+export interface BankAccountInfo {
+  accountNumberMasked: string;
+  ifscDisplay: string;
+  bankName: string;
+  accountHolderName: string;
+  payoutMethod: 'bank_transfer' | 'upi';
+  isVerified: boolean;
+  verificationStatus: 'unverified' | 'pending' | 'verified' | 'failed';
+}
+
+export interface MonthlyEarning {
+  month: string;
+  label: string;
+  amount: number;
+}
+
+export interface BankAccountFormData {
+  accountNumber: string;
+  confirmAccountNumber: string;
+  ifsc: string;
+  accountHolderName: string;
+  upiId?: string;
+  payoutMethod: 'bank_transfer' | 'upi';
 }
 

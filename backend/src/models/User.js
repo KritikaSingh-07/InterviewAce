@@ -52,6 +52,10 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isTestAccount: {
+      type: Boolean,
+      default: false,
+    },
     profileId: {
       type: mongoose.Schema.Types.ObjectId,
     },

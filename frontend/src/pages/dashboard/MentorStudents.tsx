@@ -1,170 +1,198 @@
+import React, { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
-import api from '../../lib/api';
 import {
   Users,
   Search,
-  Target,
-  GraduationCap,
+  Sparkles,
+  Crown,
+  Filter,
   Layers,
-  Mail,
-  CalendarClock,
-  UserCircle2,
+  Award,
+  RefreshCw,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '../../lib/api';
 import { MentorStudent } from '../../types';
+import StudentList from '../../components/mentor/StudentList';
+import StudentDetailModal from '../../components/mentor/StudentDetailModal';
+
+type PlanFilter = 'all' | 'pro' | 'agency';
 
 export default function MentorStudents() {
-  const navigate = useNavigate();
   const [students, setStudents] = useState<MentorStudent[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [planFilter, setPlanFilter] = useState<PlanFilter>('all');
 
-  const fetchStudents = async () => {
+  // Modal states
+  const [selectedStudent, setSelectedStudent] = useState<MentorStudent | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
+  const fetchStudents = async (planType?: string) => {
     setLoading(true);
     try {
-      const { data } = await api.get('/mentor/students');
+      // Query parameters for plan filtering: pro, agency, or both
+      const queryParam = planType && planType !== 'all' ? `?plan_type=${planType}` : '?plan_type=pro,agency';
+      const { data } = await api.get(`/mentor/students${queryParam}`);
       setStudents(data.students || []);
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to load students');
+      toast.error(error.response?.data?.error || 'Failed to load students directory');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStudents();
-  }, []);
+    fetchStudents(planFilter);
+  }, [planFilter]);
 
-  const filtered = students.filter((s) =>
-    `${s.fullName} ${s.careerGoal} ${s.college} ${s.email}`.toLowerCase().includes(search.toLowerCase())
-  );
+  // Handle on-card student click -> Open detailed modal
+  const handleSelectStudent = (student: MentorStudent) => {
+    setSelectedStudent(student);
+    setIsDetailOpen(true);
+  };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
+  // Real-time client search filter
+  const filteredStudents = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) return students;
+
+    return students.filter((s) => {
+      const nameMatch = s.fullName?.toLowerCase().includes(query);
+      const emailMatch = s.email?.toLowerCase().includes(query);
+      const roleMatch = s.careerGoal?.toLowerCase().includes(query);
+      const collegeMatch = s.college?.toLowerCase().includes(query);
+      const branchMatch = s.branch?.toLowerCase().includes(query);
+      const companyMatch = s.targetCompanies?.some((c) => c.toLowerCase().includes(query));
+      const planMatch = (s.plan === 'agency' ? 'agency' : 'model pro').includes(query);
+
+      return nameMatch || emailMatch || roleMatch || collegeMatch || branchMatch || companyMatch || planMatch;
+    });
+  }, [students, search]);
+
+  // Compute tier metrics
+  const totalCount = students.length;
+  const proCount = students.filter((s) => s.plan === 'pro').length;
+  const agencyCount = students.filter((s) => s.plan === 'agency').length;
 
   return (
     <div className="space-y-6">
+      {/* Top Banner / Hero */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="glass-card p-8"
+        className="glass-card p-6 sm:p-8 rounded-3xl border border-gray-200/80 dark:border-gray-800/80 relative overflow-hidden"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-violet-500">
-              <Users className="w-6 h-6 text-white" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-violet-500/25 shrink-0">
+              <Users className="w-7 h-7" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Students</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Browse all active students on the platform</p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">
+                  Pro & Agency Students
+                </h1>
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-violet-100 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800/50">
+                  Mentor Exclusives
+                </span>
+              </div>
+              <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+                Candidate directory strictly restricted to <span className="font-semibold text-violet-600 dark:text-violet-400">Model Pro</span> and <span className="font-semibold text-amber-600 dark:text-amber-400">Agency</span> subscribers.
+              </p>
             </div>
           </div>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search students..."
-              className="input-field pl-9 !py-2.5 text-sm w-full sm:w-72"
-            />
+
+          {/* Search bar & Refresh */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 sm:w-72">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name, company, role..."
+                className="input-field pl-10 !py-2.5 text-sm w-full"
+              />
+            </div>
+            <button
+              onClick={() => fetchStudents(planFilter)}
+              title="Refresh students"
+              className="p-2.5 rounded-xl border border-gray-200 dark:border-gray-800 bg-white/80 dark:bg-gray-800/80 text-gray-500 hover:text-violet-600 dark:hover:text-violet-400 hover:border-violet-300 transition-colors"
+            >
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        </div>
+
+        {/* Tier Filter Tabs & Counts */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mt-6 pt-6 border-t border-gray-100 dark:border-gray-800/80">
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 border border-gray-200/50 dark:border-gray-700/50">
+            <button
+              type="button"
+              onClick={() => setPlanFilter('all')}
+              className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                planFilter === 'all'
+                  ? 'bg-white dark:bg-gray-900 text-violet-600 dark:text-violet-400 shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+              }`}
+            >
+              All Tiers ({totalCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanFilter('pro')}
+              className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                planFilter === 'pro'
+                  ? 'bg-violet-600 text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-violet-600 dark:hover:text-violet-400'
+              }`}
+            >
+              <Sparkles className="w-3 h-3" />
+              Model Pro ({proCount})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPlanFilter('agency')}
+              className={`inline-flex items-center gap-1 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                planFilter === 'agency'
+                  ? 'bg-amber-600 text-white shadow-sm'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400'
+              }`}
+            >
+              <Crown className="w-3 h-3" />
+              Agency ({agencyCount})
+            </button>
+          </div>
+
+          <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+            Showing <span className="font-bold text-gray-900 dark:text-white">{filteredStudents.length}</span> eligible candidates
           </div>
         </div>
       </motion.div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map((student, i) => (
-          <motion.div
-            key={student._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: Math.min(i * 0.05, 0.5) }}
-            className="glass-card p-6 hover:shadow-lg transition-shadow"
-          >
-            <div className="flex items-center gap-3 mb-4">
-              {student.profileImage ? (
-                <img
-                  src={student.profileImage}
-                  alt={student.fullName}
-                  className="w-14 h-14 rounded-full object-cover border-2 border-indigo-200 dark:border-indigo-500/30"
-                />
-              ) : (
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-indigo-400 to-violet-500 flex items-center justify-center">
-                  <UserCircle2 className="w-8 h-8 text-white" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-gray-900 dark:text-white truncate">{student.fullName}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 truncate">
-                  <Mail className="w-3 h-3" /> {student.email}
-                </p>
-              </div>
-              <div className={`shrink-0 text-center px-3 py-1.5 rounded-xl ${
-                student.score >= 70
-                  ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                  : student.score >= 40
-                  ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400'
-                  : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
-              }`}>
-                <div className="text-lg font-bold">{Math.round(student.score)}</div>
-                <div className="text-[10px] uppercase tracking-wide">AI Score</div>
-              </div>
-            </div>
+      {/* Main Student Directory Grid */}
+      <StudentList
+        students={filteredStudents}
+        loading={loading}
+        searchQuery={search}
+        selectedPlanFilter={planFilter}
+        onSelectStudent={handleSelectStudent}
+        onClearFilters={() => {
+          setSearch('');
+          setPlanFilter('all');
+        }}
+      />
 
-            <div className="space-y-2 text-sm">
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                <Target className="w-4 h-4 text-indigo-500 shrink-0" />
-                <span className="truncate">{student.careerGoal || 'No target set'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                <GraduationCap className="w-4 h-4 text-indigo-500 shrink-0" />
-                <span className="truncate">{student.college || 'N/A'} • {student.branch || 'N/A'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                <Layers className="w-4 h-4 text-indigo-500 shrink-0" />
-                <span>{student.degree || 'N/A'} • Year {student.year}</span>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap gap-1.5 mt-3">
-              {student.targetCompanies?.slice(0, 3).map((c) => (
-                <span key={c} className="text-[11px] px-2 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400">
-                  {c}
-                </span>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-500 dark:text-gray-400">
-              <span>{student.interviewsCompleted} interviews</span>
-              <span>•</span>
-              <span>{student.totalPoints} pts</span>
-            </div>
-
-            <button
-              onClick={() => navigate('/dashboard', { state: { scheduleStudent: student._id } })}
-              className="mt-3 w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-medium hover:shadow-lg transition-all active:scale-[0.98]"
-            >
-              <CalendarClock className="w-4 h-4" />
-              Schedule Interview
-            </button>
-          </motion.div>
-        ))}
-      </div>
-
-      {filtered.length === 0 && (
-        <div className="text-center py-16 glass-card">
-          <Users className="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-3" />
-          <p className="text-gray-500 dark:text-gray-400 text-sm">
-            {search ? 'No students match your search' : 'No active students yet'}
-          </p>
-        </div>
-      )}
+      {/* Interactive Detail Modal / Drawer */}
+      <StudentDetailModal
+        student={selectedStudent}
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false);
+          setSelectedStudent(null);
+        }}
+      />
     </div>
   );
 }

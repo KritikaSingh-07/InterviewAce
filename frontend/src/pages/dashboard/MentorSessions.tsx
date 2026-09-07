@@ -63,13 +63,24 @@ export default function MentorSessions() {
         animate={{ opacity: 1, y: 0 }}
         className="glass-card p-8"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600">
-            <ClipboardList className="w-6 h-6 text-white" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600">
+              <ClipboardList className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sessions</h1>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">All mock interview sessions you've conducted</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Sessions</h1>
-            <p className="text-gray-500 dark:text-gray-400 text-sm">All mock interview sessions you've conducted</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate('/dashboard/sessions')}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-purple-600 text-white text-sm font-semibold hover:shadow-lg active:scale-[0.98] transition-all"
+            >
+              <Clock className="w-4 h-4" />
+              Manage Availability
+            </button>
           </div>
         </div>
       </motion.div>
