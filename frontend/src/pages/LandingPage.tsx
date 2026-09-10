@@ -17,9 +17,11 @@ import {
   Moon,
   Bot,
   Users,
-  Shield,
-  Zap,
+  Volume2,
   CheckCircle2,
+  Zap,
+  TrendingUp,
+  Play,
 } from 'lucide-react';
 
 const fadeInUp = {
@@ -146,94 +148,219 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section */}
-      <section ref={heroRef} className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-        {/* Background Effects */}
-        <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '-3s' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-emerald-500/10 rounded-full blur-3xl" />
+      {/* Redesigned Hero Section */}
+      <section ref={heroRef} className="relative min-h-[calc(100vh-4rem)] flex items-center justify-center pt-24 pb-16 overflow-hidden">
+        {/* Subtle Ambient Background Mesh & Glow */}
+        <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+          {/* Fine Radial Grid Overlay */}
+          <div className="absolute inset-0 bg-[radial-[#6366f1_1px,transparent_1px]] [background-size:32px_32px] opacity-[0.12] dark:opacity-[0.2]" />
+
+          {/* Soft Ambient Light Orbs */}
+          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-indigo-500/20 via-violet-500/20 to-emerald-400/10 rounded-full blur-[120px] pointer-events-none" />
         </div>
 
-        <motion.div
-          style={{ opacity: heroOpacity, scale: heroScale }}
-          className="relative z-10 max-w-5xl mx-auto px-4 text-center"
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-sm font-medium mb-8"
-          >
-            <Sparkles className="w-4 h-4" />
-            AI-Powered Interview Preparation
-          </motion.div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
 
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6"
-          >
-            <span className="gradient-text">Ace Your Next</span>
-            <br />
-            <span className="text-gray-900 dark:text-white">Interview with AI</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto mb-10"
-          >
-            Practice with AI-powered mock interviews, get personalized roadmaps, 
-            and receive detailed feedback to land your dream job.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
-          >
-            <button
-              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
-              className="btn-primary text-lg px-8 py-4 group"
+            {/* Left Column: Headline, Actions & Social Proof */}
+            <motion.div
+              style={{ opacity: heroOpacity, scale: heroScale }}
+              className="lg:col-span-7 space-y-8 text-left"
             >
-              {isAuthenticated ? 'Go to Dashboard' : 'Get Started Free'}
-              <ArrowRight className="w-5 h-5 ml-2 inline group-hover:translate-x-1 transition-transform" />
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              className="btn-secondary text-lg px-8 py-4"
-            >
-              Watch Demo
-            </button>
-          </motion.div>
 
-          {/* Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.5 }}
-            className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-8"
-          >
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-3xl font-bold gradient-text mb-1">{stat.value}</div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">{stat.label}</div>
+              {/* Headline */}
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="text-4xl xl:text-5xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-[1.1]"
+              >
+                Master your tech <br className="hidden sm:inline" />
+                interviews with <br />
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 via-violet-600 to-emerald-500">
+                  real-time AI feedback.
+                </span>
+              </motion.h1>
+
+              {/* Subtitle */}
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="text-lg sm:text-xl text-gray-600 dark:text-gray-300 max-w-xl font-normal leading-relaxed"
+              >
+                Simulate realistic high-stakes technical & behavioral interviews. Receive instant role-specific evaluations, score breakdowns, and customized learning paths.
+              </motion.p>
+
+              {/* Action Buttons & Social Proof */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
+                className="space-y-6"
+              >
+                <div className="flex flex-wrap items-center gap-4">
+                  <button
+                    onClick={() => navigate(isAuthenticated ? '/dashboard' : '/register')}
+                    className="px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold text-base shadow-lg shadow-indigo-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] flex items-center gap-2 group"
+                  >
+                    {isAuthenticated ? 'Go to Dashboard' : 'Start Free Practice'}
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/login')}
+                    className="px-8 py-4 rounded-xl bg-gray-100 dark:bg-gray-900 hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-900 dark:text-white font-semibold text-base border border-gray-200/80 dark:border-gray-800 transition-all duration-200 flex items-center gap-2"
+                  >
+                    <Play className="w-4 h-4 fill-current" />
+                    Watch Demo
+                  </button>
+                </div>
+
+                {/* User Avatars */}
+                <div className="flex items-center gap-4 pt-2">
+                  <div className="flex -space-x-2">
+                    {['SC', 'JW', 'PP'].map((initials, idx) => (
+                      <div
+                        key={idx}
+                        className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-violet-500 border-2 border-white dark:border-gray-950 flex items-center justify-center text-[10px] font-bold text-white shadow-sm"
+                      >
+                        {initials}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">
+                    Joined by <span className="font-semibold text-gray-900 dark:text-white">10,000+</span> software engineers
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Compact Metrics Row */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="pt-6 border-t border-gray-200/60 dark:border-gray-800/80 grid grid-cols-3 gap-6"
+              >
+                <div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">93%</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Offer Success Rate</div>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">50k+</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Interviews Completed</div>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">4.9/5</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 font-medium flex items-center gap-1">
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 inline" /> User Rating
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Right Column: AI Mock Interview Visual Card */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.2 }}
+              className="lg:col-span-5 relative"
+            >
+              {/* Glow behind terminal */}
+              <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-indigo-500 via-violet-600 to-emerald-500 opacity-20 blur-xl dark:opacity-30" />
+
+              {/* Glass Card Container */}
+              <div className="relative rounded-2xl bg-white dark:bg-gray-900 border border-gray-200/80 dark:border-gray-800 shadow-2xl p-6 backdrop-blur-xl overflow-hidden">
+
+                {/* Card Top Window Bar */}
+                <div className="flex items-center justify-between pb-4 mb-5 border-b border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-600/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                      <Bot className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                        System Design Mock
+                        <span className="px-2 py-0.5 text-[10px] font-medium bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-500/20">Live Session</span>
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400">Senior Software Engineer Role</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-amber-400/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-400/80" />
+                  </div>
+                </div>
+
+                {/* AI Question & Voice Waveform */}
+                <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-950/60 border border-gray-100 dark:border-gray-800 space-y-3 mb-5">
+                  <div className="flex items-center justify-between text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                    <span className="flex items-center gap-1.5">
+                      <Volume2 className="w-3.5 h-3.5 animate-pulse" /> AI Interviewer
+                    </span>
+                    <span>02:14</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed italic">
+                    "How would you handle cache invalidation across distributed data stores while maintaining consistency?"
+                  </p>
+                  {/* Animated Audio Equalizer */}
+                  <div className="flex items-center justify-center gap-1 pt-1 h-6">
+                    {[40, 70, 35, 90, 60, 100, 50, 80, 45, 95, 60, 30, 75, 40].map((h, i) => (
+                      <motion.div
+                        key={i}
+                        animate={{ height: [`${h * 0.4}%`, `${h}%`, `${h * 0.4}%`] }}
+                        transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.08 }}
+                        className="w-1 rounded-full bg-indigo-500/70"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Live Analysis Stream */}
+                <div className="space-y-3">
+                  <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/50 flex items-start gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <div className="text-xs font-semibold text-emerald-900 dark:text-emerald-300">Strong Technical Precision</div>
+                      <div className="text-[11px] text-emerald-700 dark:text-emerald-400">Accurately referenced write-through cache & pub/sub events.</div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/30 border border-indigo-200/50 dark:border-indigo-800/50 flex items-start gap-3">
+                    <Zap className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+                    <div className="w-full">
+                      <div className="flex items-center justify-between text-xs font-semibold text-indigo-900 dark:text-indigo-300">
+                        <span>Communication Score</span>
+                        <span className="text-indigo-600 dark:text-indigo-400 font-bold">94%</span>
+                      </div>
+                      <div className="w-full h-1.5 bg-indigo-200/60 dark:bg-indigo-900/60 rounded-full mt-1.5 overflow-hidden">
+                        <div className="h-full bg-gradient-to-r from-indigo-500 to-violet-500 w-[94%] rounded-full" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating Performance Pill */}
+                <motion.div
+                  animate={{ y: [0, -6, 0] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute -bottom-2 -right-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 px-4 py-2 rounded-xl shadow-xl flex items-center gap-3"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold text-xs">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-gray-500 dark:text-gray-400 uppercase font-semibold">Growth</div>
+                    <div className="text-xs font-bold text-gray-900 dark:text-white">+42% Confidence</div>
+                  </div>
+                </motion.div>
+
               </div>
-            ))}
-          </motion.div>
-        </motion.div>
+            </motion.div>
 
-        <motion.div
-          animate={{ y: [0, 10, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-          className="absolute bottom-8 left-1/2 -translate-x-1/2"
-        >
-          <ChevronDown className="w-6 h-6 text-gray-400" />
-        </motion.div>
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
@@ -547,4 +674,3 @@ export default function LandingPage() {
     </div>
   );
 }
-
