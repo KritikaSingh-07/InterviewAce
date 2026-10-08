@@ -14,7 +14,7 @@ export default function ProgressBar({ currentStep, totalSteps }: ProgressBarProp
         initial={{ width: 0 }}
         animate={{ width: `${percentage}%` }}
         transition={{ duration: 0.4, ease: 'easeInOut' }}
-        className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500"
+        className="h-full bg-gradient-to-r from-indigo-900 via-indigo-600 to-violet-500"
       />
     </div>
   );

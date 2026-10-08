@@ -1,11 +1,12 @@
-import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useOutlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuthStore } from '../../store/authStore';
-import { useThemeStore } from '../../store/themeStore';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { connectSocket, disconnectSocket, getSocket } from '../../lib/socket';
 import { motion, AnimatePresence } from 'framer-motion';
+import AnimatedBackground from '../ui/AnimatedBackground';
+import ThemeToggle from '../ui/ThemeToggle';
 import {
   LayoutDashboard,
   Route,
@@ -14,8 +15,6 @@ import {
   LogOut,
   ChevronLeft,
   ChevronRight,
-  Sun,
-  Moon,
   Menu,
   X,
   Bell,
@@ -72,8 +71,9 @@ export default function MainLayout() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user, logout } = useAuthStore();
-  const { isDarkMode, toggle } = useThemeStore();
   const location = useLocation();
+  // Captured per render so the exiting page keeps its own content during the transition
+  const outlet = useOutlet();
   const navigate = useNavigate();
   const prevUnreadRef = useRef(0);
   const prevIdsRef = useRef<Set<string>>(new Set());
@@ -226,7 +226,8 @@ const isMentor = user?.role === 'mentor';
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex">
+    <div className="relative isolate min-h-screen bg-gray-50/60 dark:bg-gray-950 flex">
+      <AnimatedBackground />
       {/* Mobile Overlay */}
       <AnimatePresence>
         {mobileOpen && (
@@ -235,7 +236,7 @@ const isMentor = user?.role === 'mentor';
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setMobileOpen(false)}
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 lg:hidden"
           />
         )}
       </AnimatePresence>
@@ -244,7 +245,7 @@ const isMentor = user?.role === 'mentor';
       <motion.aside
         initial={false}
         animate={{ width: collapsed ? 80 : 280 }}
-        className={`fixed left-0 top-0 h-full z-50 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg
+        className={`fixed left-0 top-0 h-full z-50 bg-white/80 dark:bg-gray-900/70 backdrop-blur-2xl border-r border-gray-200/70 dark:border-white/[0.06] shadow-xl shadow-gray-900/[0.03]
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
           transition-transform duration-300`}
       >
@@ -252,9 +253,13 @@ const isMentor = user?.role === 'mentor';
           {/* Logo */}
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center flex-shrink-0">
-                <span className="text-white font-bold text-lg">IA</span>
-              </div>
+              <motion.div
+                whileHover={{ rotate: -8, scale: 1.06 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 15 }}
+                className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-600 via-indigo-500 to-violet-500 bg-[length:200%_200%] animate-gradient shadow-lg shadow-indigo-900/30 flex items-center justify-center flex-shrink-0"
+              >
+                <span className="text-white font-bold text-lg font-display">IA</span>
+              </motion.div>
               {!collapsed && (
                 <motion.div
                   initial={{ opacity: 0 }}
@@ -277,21 +282,24 @@ const isMentor = user?.role === 'mentor';
                   key={link.to}
                   to={link.to}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200 group
+                  className={`relative flex items-center gap-3 px-3 py-3 rounded-xl transition-colors duration-200 group
                     ${isActive
-                      ? 'bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-medium'
-                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
+                      ? 'text-indigo-800 dark:text-violet-400 font-semibold'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100/80 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-gray-200'
                     }`}
                 >
-                  <link.icon className="w-5 h-5 flex-shrink-0" />
-                  {!collapsed && (
-                    <span className="text-sm truncate">{link.label}</span>
-                  )}
-                  {isActive && !collapsed && (
+                  {isActive && (
                     <motion.div
                       layoutId="activeTab"
-                      className="ml-auto w-1.5 h-1.5 rounded-full bg-indigo-500"
-                    />
+                      transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-indigo-500/15 via-violet-500/10 to-transparent dark:from-indigo-500/20 dark:via-violet-500/10 border border-indigo-500/20 dark:border-violet-500/25"
+                    >
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 rounded-r-full bg-gradient-to-b from-indigo-500 to-violet-500" />
+                    </motion.div>
+                  )}
+                  <link.icon className="relative w-5 h-5 flex-shrink-0 transition-transform duration-200 group-hover:scale-110" />
+                  {!collapsed && (
+                    <span className="relative text-sm truncate">{link.label}</span>
                   )}
                 </NavLink>
               );
@@ -348,7 +356,7 @@ const isMentor = user?.role === 'mentor';
       {/* Main Content */}
       <div className={`flex-1 flex flex-col min-h-screen ${collapsed ? 'lg:ml-20' : 'lg:ml-72'} transition-all duration-300`}>
         {/* Top Bar */}
-        <header className="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-xl border-b border-gray-200 dark:border-gray-800">
+        <header className="sticky top-0 z-30 bg-white/70 dark:bg-gray-950/60 backdrop-blur-xl border-b border-gray-200/70 dark:border-white/[0.06]">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               <button
@@ -357,7 +365,13 @@ const isMentor = user?.role === 'mentor';
               >
                 <Menu className="w-5 h-5" />
               </button>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+              <motion.h2
+                key={location.pathname}
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25 }}
+                className="text-lg font-semibold text-gray-900 dark:text-white capitalize"
+              >
                 {(() => {
                   const segments = location.pathname.split('/').filter(Boolean);
                   const last = segments[segments.length - 1];
@@ -371,16 +385,11 @@ const isMentor = user?.role === 'mentor';
                   }
                   return last?.replace(/-/g, ' ') || 'Dashboard';
                 })()}
-              </h2>
+              </motion.h2>
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={toggle}
-                className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 transition-all"
-              >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
+              <ThemeToggle />
               <div className="relative">
                 <button
                   onClick={(e) => { e.stopPropagation(); setNotifOpen((o) => !o); }}
@@ -388,7 +397,10 @@ const isMentor = user?.role === 'mentor';
                 >
                   <Bell className="w-5 h-5" />
                   {unreadCount > 0 && (
-                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                    <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-violet-500 opacity-75 animate-ping" />
+                      <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-violet-500" />
+                    </span>
                   )}
                 </button>
 
@@ -451,7 +463,7 @@ const isMentor = user?.role === 'mentor';
                                         navigate('/dashboard/sessions');
                                       }
                                     }}
-                                    className={`w-full text-left px-4 py-3 border-b border-gray-55 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 items-start cursor-pointer group relative ${
+                                    className={`w-full text-left px-4 py-3 border-b border-gray-100 dark:border-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors flex gap-3 items-start cursor-pointer group relative ${
                                       !n.read ? 'bg-indigo-50/50 dark:bg-indigo-500/5' : ''
                                     }`}
                                   >
@@ -511,7 +523,7 @@ const isMentor = user?.role === 'mentor';
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   aria-expanded={dropdownOpen}
                   aria-haspopup="true"
-                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-105 dark:hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="flex items-center gap-2 p-1 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-all focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 >
                   {user?.profileImage ? (
                     <img
@@ -565,7 +577,7 @@ const isMentor = user?.role === 'mentor';
                             setDropdownOpen(false);
                             logout();
                           }}
-                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-655 dark:text-red-450 hover:bg-red-50 dark:hover:bg-red-955/20 transition-colors"
+                          className="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors"
                         >
                           <LogOut className="w-4 h-4 text-red-500" />
                           <span className="text-red-600">Logout</span>
@@ -581,7 +593,17 @@ const isMentor = user?.role === 'mentor';
 
         {/* Page Content */}
         <main className="flex-1 p-4 md:p-6 lg:p-8">
-          <Outlet />
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={location.pathname}
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            >
+              {outlet}
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

@@ -29,14 +29,14 @@ export const SKILL_SUGGESTIONS = [
 
 // Curated color palette for chips
 const CHIP_COLORS = [
-  { bg: 'rgba(99,102,241,0.25)', border: 'rgba(139,92,246,0.5)', text: '#a78bfa' },   // indigo-violet
+  { bg: 'rgba(201,48,58,0.2)',   border: 'rgba(185,28,28,0.5)',  text: '#e2616a' },   // oxblood
   { bg: 'rgba(16,185,129,0.2)',  border: 'rgba(5,150,105,0.5)',  text: '#34d399' },   // emerald
   { bg: 'rgba(245,158,11,0.2)',  border: 'rgba(217,119,6,0.5)',  text: '#fbbf24' },   // amber
   { bg: 'rgba(59,130,246,0.2)',  border: 'rgba(37,99,235,0.5)',  text: '#60a5fa' },   // blue
   { bg: 'rgba(236,72,153,0.2)',  border: 'rgba(219,39,119,0.5)', text: '#f472b6' },   // pink
   { bg: 'rgba(20,184,166,0.2)',  border: 'rgba(13,148,136,0.5)', text: '#2dd4bf' },   // teal
-  { bg: 'rgba(139,92,246,0.2)',  border: 'rgba(124,58,237,0.5)', text: '#c084fc' },   // purple
-  { bg: 'rgba(249,115,22,0.2)',  border: 'rgba(234,88,12,0.5)',  text: '#fb923c' },   // orange
+  { bg: 'rgba(244,63,94,0.2)',   border: 'rgba(225,29,72,0.5)',  text: '#fb7185' },   // rose
+  { bg: 'rgba(132,204,22,0.2)',  border: 'rgba(101,163,13,0.5)', text: '#a3e635' },   // lime
 ];
 
 function getChipColor(skill: string) {
@@ -228,7 +228,7 @@ export default function SkillTagInput({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute z-[9999] w-full bottom-full mb-2 max-h-56 overflow-y-auto rounded-xl border border-white/10 shadow-2xl"
             style={{
-              background: 'linear-gradient(135deg, rgba(15,15,35,0.98) 0%, rgba(30,20,60,0.98) 100%)',
+              background: 'linear-gradient(135deg, rgba(20,20,18,0.98) 0%, rgba(42,8,10,0.98) 100%)',
               backdropFilter: 'blur(20px)',
             }}
           >

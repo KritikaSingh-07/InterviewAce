@@ -4,52 +4,94 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 140 14% 97%;   /* #F5F8F6 */
+    --foreground: 60 50% 1%;     /* #030301 */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --border: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.75rem;
+    --card-foreground: 60 50% 1%;
+    --muted: 90 6% 93%;
+    --muted-foreground: 60 3% 40%;
+    --border: 90 4% 86%;
+    --ring: 359 100% 14%;        /* #480001 */
+    --radius: 0.875rem;
+
+    /* Brand tokens (used by raw CSS / inline styles) */
+    --brand-1: 72 0 1;       /* oxblood #480001 */
+    --brand-2: 201 48 58;    /* lacquer #C9303A */
+    --brand-3: 138 138 131;  /* stone   #8A8A83 */
+    --glow-opacity: 0.3;
+    --grain-opacity: 0.12;
+    --grain-blend: multiply;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --border: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --background: 60 50% 1%;     /* #030301 */
+    --foreground: 140 14% 97%;   /* #F5F8F6 */
+    --card: 60 5% 7%;
+    --card-foreground: 140 14% 97%;
+    --muted: 60 3% 17%;
+    --muted-foreground: 60 3% 65%;
+    --border: 60 3% 17%;
+    --ring: 356 61% 49%;         /* lacquer */
+    --brand-1: 201 48 58;
+    --glow-opacity: 0.28;
+    --grain-opacity: 0.09;
+    --grain-blend: screen;
   }
 
   * {
     @apply border-gray-200 dark:border-gray-800;
   }
 
-  body {
-    @apply bg-white dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans antialiased;
-  }
-
   html {
     scroll-behavior: smooth;
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100 font-sans antialiased;
+    transition: background-color 0.4s ease, color 0.4s ease;
+  }
+
+  h1, h2, h3 {
+    @apply font-display tracking-tight;
+  }
+
+  ::selection {
+    background: rgb(var(--brand-1) / 0.25);
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--brand-1) / 0.7);
+    outline-offset: 2px;
   }
 }
 
 @layer components {
+  /* ── Surfaces ─────────────────────────────────────────────────────── */
   .glass {
-    @apply bg-white/70 dark:bg-gray-900/70 backdrop-blur-xl border border-white/20 dark:border-gray-700/30 shadow-lg;
+    @apply bg-white/70 dark:bg-gray-900/60 backdrop-blur-xl border border-white/40 dark:border-white/[0.06] shadow-lg shadow-gray-900/[0.03] dark:shadow-black/30;
   }
 
+  /* Cards skip backdrop-blur on purpose: the animated background behind them
+     would force a re-blur every frame for every card on screen. */
   .glass-card {
-    @apply glass rounded-2xl transition-all duration-300 hover:shadow-xl hover:bg-white/80 dark:hover:bg-gray-900/80;
+    @apply bg-white/85 dark:bg-gray-900/75 border border-gray-200/70 dark:border-white/[0.06]
+           shadow-lg shadow-gray-900/[0.03] dark:shadow-black/30
+           rounded-2xl transition-all duration-300 ease-out
+           hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-900/[0.08] dark:hover:shadow-black/50
+           hover:bg-white/90 dark:hover:bg-gray-900/80
+           hover:border-indigo-200/70 dark:hover:border-violet-500/25;
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-indigo-900 via-violet-600 to-indigo-800
+           dark:from-violet-400 dark:via-gray-100 dark:to-violet-400;
+    background-size: 200% auto;
+    animation: gradient 6s ease infinite;
   }
 
   .gradient-border {
@@ -58,31 +100,94 @@
 
   .gradient-border::before {
     content: '';
-    @apply absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-500 -z-10 opacity-75;
+    @apply absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-indigo-800 via-violet-500 to-gray-400 -z-10 opacity-75;
+    background-size: 200% 200%;
+    animation: gradient 6s ease infinite;
   }
 
+  /* ── Buttons ──────────────────────────────────────────────────────── */
   .btn-primary {
-    @apply px-6 py-3 bg-gradient-to-r from-indigo-600 to-violet-600 text-white font-semibold rounded-xl 
-           hover:from-indigo-700 hover:to-violet-700 transition-all duration-300 
-           shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 
-           active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply relative overflow-hidden isolate px-6 py-3 text-white font-semibold rounded-xl
+           bg-gradient-to-r from-indigo-900 via-indigo-600 to-indigo-900
+           dark:from-indigo-700 dark:via-violet-600 dark:to-indigo-700
+           transition-all duration-300 ease-out
+           shadow-lg shadow-indigo-900/25 hover:shadow-xl hover:shadow-indigo-900/35
+           dark:shadow-black/40 dark:hover:shadow-violet-900/40
+           hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98]
+           disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0;
+    background-size: 200% auto;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-position: right center;
+  }
+
+  /* Light sweep on hover */
+  .btn-primary::after {
+    content: '';
+    @apply absolute inset-0 -z-10 pointer-events-none;
+    background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.35) 50%, transparent 70%);
+    background-size: 250% 100%;
+    background-position: 150% 0;
+    transition: background-position 0.7s ease;
+  }
+
+  .btn-primary:hover:not(:disabled)::after {
+    background-position: -50% 0;
   }
 
   .btn-secondary {
-    @apply px-6 py-3 glass-card text-gray-900 dark:text-gray-100 font-semibold rounded-xl
-           hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-300
-           active:scale-[0.98];
+    @apply px-6 py-3 glass text-gray-900 dark:text-gray-100 font-semibold rounded-xl
+           hover:bg-white dark:hover:bg-gray-800/80 hover:-translate-y-0.5
+           hover:border-indigo-300/60 dark:hover:border-violet-500/30
+           transition-all duration-300 ease-out active:scale-[0.98];
   }
 
   .input-field {
-    @apply w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 
+    @apply w-full px-4 py-3 bg-white/80 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800
            rounded-xl text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500
-           focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 
+           focus:outline-none focus:ring-4 focus:ring-indigo-900/10 focus:border-indigo-800
+           dark:focus:ring-violet-500/15 dark:focus:border-violet-500
+           hover:border-gray-300 dark:hover:border-gray-700
            transition-all duration-200;
   }
 
   .card-hover {
-    @apply hover:scale-[1.02] hover:shadow-2xl transition-all duration-300;
+    @apply hover:-translate-y-1 hover:scale-[1.01] hover:shadow-2xl hover:shadow-indigo-900/10 transition-all duration-300 ease-out;
+  }
+
+  /* ── Animated backdrop ────────────────────────────────────────────── */
+  .aurora {
+    @apply pointer-events-none fixed inset-0 -z-10 overflow-hidden;
+  }
+
+  .aurora-blob {
+    @apply absolute rounded-full blur-3xl;
+    opacity: var(--glow-opacity);
+    will-change: transform;
+  }
+
+  /* Analog film grain. The layer is oversized and jittered in steps so the
+     noise "breathes" like film; the parent must clip it (overflow-hidden). */
+  .bg-grain {
+    @apply absolute pointer-events-none;
+    inset: -50%;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 220px 220px;
+    opacity: var(--grain-opacity);
+    mix-blend-mode: var(--grain-blend);
+    animation: grain 9s steps(10) infinite;
+  }
+
+  .skeleton-shimmer {
+    @apply bg-gray-200 dark:bg-gray-800;
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.4), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.6s linear infinite;
+  }
+
+  .dark .skeleton-shimmer {
+    background-image: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.06), transparent);
   }
 }
 
@@ -101,7 +206,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-gray-400 dark:bg-gray-600;
+  @apply bg-indigo-800 dark:bg-violet-600;
 }
 
 /* Animations */
@@ -110,7 +215,7 @@
 }
 
 .slide-up {
-  animation: slideUp 0.5s ease-out;
+  animation: slideUp 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @keyframes fadeIn {
@@ -123,3 +228,49 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes grain {
+  0%, 100% { transform: translate(0, 0); }
+  10% { transform: translate(-5%, -10%); }
+  20% { transform: translate(-15%, 5%); }
+  30% { transform: translate(7%, -25%); }
+  40% { transform: translate(-5%, 25%); }
+  50% { transform: translate(-15%, 10%); }
+  60% { transform: translate(15%, 0%); }
+  70% { transform: translate(0%, 15%); }
+  80% { transform: translate(3%, 35%); }
+  90% { transform: translate(-10%, 10%); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* Smooth light/dark switch for common surfaces */
+.theme-transition,
+.theme-transition * {
+  transition: background-color 0.4s ease, border-color 0.4s ease, color 0.3s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Oxblood is too deep to read on the near-black dark background. Brand text
+   colours that don't declare their own dark: variant get lifted to lacquer. */
+.dark :is(.text-indigo-500, .text-indigo-600, .text-indigo-700, .text-indigo-800, .text-indigo-900,
+          .text-violet-500, .text-violet-600, .text-violet-700):not([class*="dark:text-"]) {
+  color: #e2616a;
+}

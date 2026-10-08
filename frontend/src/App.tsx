@@ -121,9 +121,11 @@ function App() {
         toastOptions={{
           duration: 4000,
           style: {
-            background: isDarkMode ? '#1f2937' : '#fff',
-            color: isDarkMode ? '#f3f4f6' : '#111827',
-            border: `1px solid ${isDarkMode ? '#374151' : '#e5e7eb'}`,
+            background: isDarkMode ? '#141412' : '#fff',
+            color: isDarkMode ? '#f5f8f6' : '#030301',
+            border: `1px solid ${isDarkMode ? '#2e2e2b' : '#dcdeda'}`,
+            borderRadius: '14px',
+            boxShadow: '0 10px 30px -10px rgba(72, 0, 1, 0.25)',
           },
         }}
       />

@@ -77,7 +77,7 @@ export default function EarningsAnalyticsModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 15 }}
             transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="relative w-full max-w-5xl max-h-[94vh] overflow-y-auto bg-[#070b14] text-white rounded-[28px] border border-[#161f36] shadow-2xl p-6 sm:p-8 z-10 custom-scrollbar space-y-6"
+            className="relative w-full max-w-5xl max-h-[94vh] overflow-y-auto bg-[#0c0c0c] text-white rounded-[28px] border border-[#202020] shadow-2xl p-6 sm:p-8 z-10 custom-scrollbar space-y-6"
           >
             {/* Top Close Button (Floating) */}
             <button
@@ -99,7 +99,7 @@ export default function EarningsAnalyticsModal({
                 <div className="relative">
                   <button
                     onClick={() => setTimeFilterOpen(!timeFilterOpen)}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0e1424] hover:bg-[#131c33] border border-[#1c2848] text-xs font-medium text-gray-300 transition-all"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#151515] hover:bg-[#1d1d1d] border border-[#292929] text-xs font-medium text-gray-300 transition-all"
                   >
                     <Calendar className="w-3.5 h-3.5 text-gray-400" />
                     <span>{timeFilter}</span>
@@ -107,7 +107,7 @@ export default function EarningsAnalyticsModal({
                   </button>
 
                   {timeFilterOpen && (
-                    <div className="absolute right-0 mt-2 w-36 bg-[#0e1424] border border-[#1c2848] rounded-xl shadow-xl py-1 z-30">
+                    <div className="absolute right-0 mt-2 w-36 bg-[#151515] border border-[#292929] rounded-xl shadow-xl py-1 z-30">
                       {['This month', 'Last 3 months', 'Last 6 months', 'All time'].map((tf) => (
                         <button
                           key={tf}
@@ -132,7 +132,7 @@ export default function EarningsAnalyticsModal({
                     onClose();
                     if (onOpenWithdraw) onOpenWithdraw();
                   }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#17203d] to-[#1e2b52] hover:from-[#1e2a52] hover:to-[#27386c] border border-[#2a3a69] text-xs font-semibold text-indigo-200 transition-all active:scale-[0.98] shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-[#222222] to-[#2d2d2d] hover:from-[#2c2c2c] hover:to-[#3a3a3a] border border-[#3c3c3c] text-xs font-semibold text-indigo-200 transition-all active:scale-[0.98] shadow-sm"
                 >
                   <UploadCloud className="w-3.5 h-3.5 text-indigo-400" />
                   <span>Withdraw funds</span>
@@ -143,9 +143,9 @@ export default function EarningsAnalyticsModal({
             {/* 2. Top Stats Row (4 Cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Total earned */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4 flex items-center justify-between hover:border-indigo-500/30 transition-all">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4 flex items-center justify-between hover:border-indigo-500/30 transition-all">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#111933] border border-[#1d2b57] flex items-center justify-center text-indigo-400">
+                  <div className="w-10 h-10 rounded-xl bg-[#1b1b1b] border border-[#2d2d2d] flex items-center justify-center text-indigo-400">
                     <IndianRupee className="w-5 h-5" />
                   </div>
                   <div>
@@ -167,9 +167,9 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Card 2: Available */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/30 transition-all">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4 flex items-center justify-between hover:border-emerald-500/30 transition-all">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#0c1e22] border border-[#12363b] flex items-center justify-center text-emerald-400">
+                  <div className="w-10 h-10 rounded-xl bg-[#1a1a1a] border border-[#2d2d2d] flex items-center justify-center text-emerald-400">
                     <Wallet className="w-5 h-5" />
                   </div>
                   <div>
@@ -191,7 +191,7 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Card 3: Pending release */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4 flex items-center justify-between hover:border-amber-500/30 transition-all">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4 flex items-center justify-between hover:border-amber-500/30 transition-all">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-xl bg-[#231d13] border border-[#3b301a] flex items-center justify-center text-amber-400">
                     <Clock className="w-5 h-5" />
@@ -215,9 +215,9 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Card 4: Withdrawn */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4 flex items-center justify-between hover:border-purple-500/30 transition-all">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4 flex items-center justify-between hover:border-purple-500/30 transition-all">
                 <div className="flex items-start gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#1e142c] border border-[#391e57] flex items-center justify-center text-purple-400">
+                  <div className="w-10 h-10 rounded-xl bg-[#1b1b1b] border border-[#2e2e2e] flex items-center justify-center text-purple-400">
                     <ArrowDownToLine className="w-5 h-5" />
                   </div>
                   <div>
@@ -242,11 +242,11 @@ export default function EarningsAnalyticsModal({
             {/* 3. Middle Row (2 Columns: Earnings overview & Revenue split) */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               {/* Left: Earnings overview Line/Area chart */}
-              <div className="lg:col-span-7 bg-[#0b101f] border border-[#17223c] rounded-3xl p-6 flex flex-col justify-between">
+              <div className="lg:col-span-7 bg-[#111111] border border-[#232323] rounded-3xl p-6 flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-[#131b36] flex items-center justify-center text-indigo-400">
+                    <div className="w-8 h-8 rounded-xl bg-[#1d1d1d] flex items-center justify-center text-indigo-400">
                       <BarChart3 className="w-4 h-4" />
                     </div>
                     <h3 className="text-base font-bold text-white">Earnings overview</h3>
@@ -256,14 +256,14 @@ export default function EarningsAnalyticsModal({
                   <div className="relative">
                     <button
                       onClick={() => setChartViewOpen(!chartViewOpen)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0f1629] hover:bg-[#141d36] border border-[#1d2948] text-xs font-medium text-gray-300"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#171717] hover:bg-[#1e1e1e] border border-[#2a2a2a] text-xs font-medium text-gray-300"
                     >
                       <span>{chartView}</span>
                       <ChevronDown className="w-3 h-3 text-gray-400" />
                     </button>
 
                     {chartViewOpen && (
-                      <div className="absolute right-0 mt-1 w-28 bg-[#0f1629] border border-[#1d2948] rounded-xl shadow-lg py-1 z-30">
+                      <div className="absolute right-0 mt-1 w-28 bg-[#171717] border border-[#2a2a2a] rounded-xl shadow-lg py-1 z-30">
                         {['Monthly', 'Weekly', 'Daily'].map((cv) => (
                           <button
                             key={cv}
@@ -300,7 +300,7 @@ export default function EarningsAnalyticsModal({
                     {['100', '75', '50', '25', '0'].map((tick) => (
                       <div key={tick} className="flex items-center gap-3 w-full">
                         <span className="w-6 text-right font-mono">{tick}</span>
-                        <div className="flex-1 border-b border-[#141d33]" />
+                        <div className="flex-1 border-b border-[#1e1e1e]" />
                       </div>
                     ))}
                   </div>
@@ -309,7 +309,7 @@ export default function EarningsAnalyticsModal({
                   <div className="relative z-10 w-full h-full flex flex-col items-center justify-center">
                     {!hasChartData ? (
                       <div className="flex flex-col items-center justify-center text-center">
-                        <div className="w-10 h-10 rounded-full border border-gray-700/60 bg-[#0e1529] flex items-center justify-center mb-2">
+                        <div className="w-10 h-10 rounded-full border border-gray-700/60 bg-[#161616] flex items-center justify-center mb-2">
                           <BarChart3 className="w-4 h-4 text-gray-400" />
                         </div>
                         <div className="text-sm font-semibold text-white">No data to display</div>
@@ -338,10 +338,10 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Right: Revenue split Donut Chart */}
-              <div className="lg:col-span-5 bg-[#0b101f] border border-[#17223c] rounded-3xl p-6 flex flex-col justify-between">
+              <div className="lg:col-span-5 bg-[#111111] border border-[#232323] rounded-3xl p-6 flex flex-col justify-between">
                 {/* Header */}
                 <div className="flex items-center gap-2.5 mb-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#1a1436] flex items-center justify-center text-purple-400">
+                  <div className="w-8 h-8 rounded-xl bg-[#1b1b1b] flex items-center justify-center text-purple-400">
                     <PieChartIcon className="w-4 h-4" />
                   </div>
                   <div>
@@ -361,7 +361,7 @@ export default function EarningsAnalyticsModal({
                         cy="100"
                         r="70"
                         fill="none"
-                        stroke="#3b82f6"
+                        stroke="#c9303a"
                         strokeWidth="24"
                         strokeDasharray="439.8"
                         strokeDashoffset="131.9" // 70% of 439.8
@@ -374,7 +374,7 @@ export default function EarningsAnalyticsModal({
                         cy="100"
                         r="70"
                         fill="none"
-                        stroke="#a855f7"
+                        stroke="#a6a69f"
                         strokeWidth="24"
                         strokeDasharray="439.8"
                         strokeDashoffset="307.8" // 30%
@@ -394,7 +394,7 @@ export default function EarningsAnalyticsModal({
                     {/* Mentor 70% */}
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-1 flex-shrink-0" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-violet-500 mt-1 flex-shrink-0" />
                         <div>
                           <div className="text-xs font-bold text-white">Mentor</div>
                           <div className="text-[11px] text-gray-400">Direct to your wallet</div>
@@ -418,7 +418,7 @@ export default function EarningsAnalyticsModal({
                 </div>
 
                 {/* Bottom Notice Pill */}
-                <div className="mt-3 py-2.5 px-3.5 rounded-xl bg-[#0e1529] border border-[#192444] flex items-center gap-2 text-xs text-gray-300">
+                <div className="mt-3 py-2.5 px-3.5 rounded-xl bg-[#161616] border border-[#252525] flex items-center gap-2 text-xs text-gray-300">
                   <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
                   <span>Your earnings are auto-split 70/30 for every session.</span>
                 </div>
@@ -426,10 +426,10 @@ export default function EarningsAnalyticsModal({
             </div>
 
             {/* 4. Payout timeline (Horizontal Stepper Card) */}
-            <div className="bg-[#0b101f] border border-[#17223c] rounded-3xl p-6">
+            <div className="bg-[#111111] border border-[#232323] rounded-3xl p-6">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-[#1a1436] flex items-center justify-center text-purple-400">
+                  <div className="w-8 h-8 rounded-xl bg-[#1b1b1b] flex items-center justify-center text-purple-400">
                     <Clock className="w-4 h-4" />
                   </div>
                   <div>
@@ -443,7 +443,7 @@ export default function EarningsAnalyticsModal({
               <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative">
                 {/* Step 1 */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#1e1333] border border-[#391e57] flex items-center justify-center text-purple-400 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#1b1b1b] border border-[#2e2e2e] flex items-center justify-center text-purple-400 flex-shrink-0">
                     <Calendar className="w-5 h-5" />
                   </div>
                   <div>
@@ -457,7 +457,7 @@ export default function EarningsAnalyticsModal({
 
                 {/* Step 2 */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#0c1e22] border border-[#12363b] flex items-center justify-center text-emerald-400 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#1a1a1a] border border-[#2d2d2d] flex items-center justify-center text-emerald-400 flex-shrink-0">
                     <ShieldCheck className="w-5 h-5" />
                   </div>
                   <div>
@@ -485,7 +485,7 @@ export default function EarningsAnalyticsModal({
 
                 {/* Step 4 */}
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-[#1e142c] border border-[#391e57] flex items-center justify-center text-purple-400 flex-shrink-0">
+                  <div className="w-10 h-10 rounded-2xl bg-[#1b1b1b] border border-[#2e2e2e] flex items-center justify-center text-purple-400 flex-shrink-0">
                     <IndianRupee className="w-5 h-5" />
                   </div>
                   <div>
@@ -499,7 +499,7 @@ export default function EarningsAnalyticsModal({
             {/* 5. Bottom Metrics Row (4 Cards) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Card 1: Mentor revenue */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4 flex items-center justify-between">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4 flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mb-1">
                     <User className="w-3.5 h-3.5 text-indigo-400" />
@@ -512,14 +512,14 @@ export default function EarningsAnalyticsModal({
                 {/* Mini Pie visual */}
                 <div className="w-10 h-10 relative flex-shrink-0">
                   <svg viewBox="0 0 32 32" className="w-full h-full transform -rotate-90">
-                    <circle r="16" cx="16" cy="16" fill="#a855f7" />
-                    <circle r="8" cx="16" cy="16" fill="none" stroke="#3b82f6" strokeWidth="16" strokeDasharray="100" strokeDashoffset="30" />
+                    <circle r="16" cx="16" cy="16" fill="#8a8a83" />
+                    <circle r="8" cx="16" cy="16" fill="none" stroke="#c9303a" strokeWidth="16" strokeDasharray="100" strokeDashoffset="30" />
                   </svg>
                 </div>
               </div>
 
               {/* Card 2: Security hold period */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4">
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mb-1">
                   <Shield className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Security hold period</span>
@@ -529,7 +529,7 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Card 3: Minimum payout */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4">
                 <div className="flex items-center gap-1.5 text-xs text-gray-400 font-medium mb-1">
                   <IndianRupee className="w-3.5 h-3.5 text-purple-400" />
                   <span>Minimum payout</span>
@@ -539,7 +539,7 @@ export default function EarningsAnalyticsModal({
               </div>
 
               {/* Card 4: Pro tip */}
-              <div className="bg-[#0b101f] border border-[#17223c] rounded-2xl p-4">
+              <div className="bg-[#111111] border border-[#232323] rounded-2xl p-4">
                 <div className="flex items-center gap-1.5 text-xs text-purple-400 font-semibold mb-1">
                   <Sparkles className="w-3.5 h-3.5" />
                   <span>Pro tip</span>

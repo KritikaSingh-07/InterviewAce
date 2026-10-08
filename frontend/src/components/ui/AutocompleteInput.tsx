@@ -180,7 +180,7 @@ export default function AutocompleteInput({
             transition={{ duration: 0.15, ease: 'easeOut' }}
             className="absolute z-[9999] w-full mt-2 max-h-64 overflow-y-auto rounded-xl border border-white/10 shadow-2xl"
             style={{
-              background: 'linear-gradient(135deg, rgba(15,15,35,0.98) 0%, rgba(30,20,60,0.98) 100%)',
+              background: 'linear-gradient(135deg, rgba(20,20,18,0.98) 0%, rgba(42,8,10,0.98) 100%)',
               backdropFilter: 'blur(20px)',
             }}
           >

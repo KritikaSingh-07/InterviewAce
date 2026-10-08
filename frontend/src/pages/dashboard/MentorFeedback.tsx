@@ -71,7 +71,7 @@ export default function MentorFeedback() {
   const categoryList = [
     { key: 'communication', label: 'Communication', score: categories.communication, icon: MessageSquare, color: 'from-indigo-500 to-violet-500' },
     { key: 'explanation', label: 'Explanation', score: categories.explanation, icon: BookOpen, color: 'from-purple-500 to-pink-500' },
-    { key: 'technicalKnowledge', label: 'Technical Knowledge', score: categories.technicalKnowledge, icon: Zap, color: 'from-blue-500 to-indigo-500' },
+    { key: 'technicalKnowledge', label: 'Technical Knowledge', score: categories.technicalKnowledge, icon: Zap, color: 'from-amber-500 to-indigo-500' },
     { key: 'problemSolving', label: 'Problem Solving', score: categories.problemSolving, icon: Sparkles, color: 'from-amber-500 to-orange-500' },
     { key: 'patience', label: 'Patience', score: categories.patience, icon: HeartHandshake, color: 'from-teal-500 to-emerald-500' },
     { key: 'professionalism', label: 'Professionalism', score: categories.professionalism, icon: ShieldCheck, color: 'from-violet-500 to-purple-600' },
@@ -149,8 +149,8 @@ export default function MentorFeedback() {
               />
               <defs>
                 <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#6366f1" />
-                  <stop offset="100%" stopColor="#8b5cf6" />
+                  <stop offset="0%" stopColor="#480001" />
+                  <stop offset="100%" stopColor="#c9303a" />
                 </linearGradient>
               </defs>
             </svg>

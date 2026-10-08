@@ -29,8 +29,8 @@ const GEN_PARTICLES = Array.from({ length: 28 }, (_, i) => ({
   duration: 2.2 + (i * 0.17) % 2.8,
   size: 2 + (i * 0.37) % 3.5,
   color: [
-    '#6366f1', '#8b5cf6', '#a855f7',
-    '#ec4899', '#3b82f6', '#06b6d4', '#7c3aed',
+    '#a81c26', '#8a8a83', '#c9303a',
+    '#a08b79', '#7d0b0e', '#6b5849', '#e2616a',
   ][i % 7],
 }));
 
@@ -296,7 +296,7 @@ export default function RoadmapGenerator() {
                 </svg>
 
                 {/* ── Dark Frosted Backdrop ── */}
-                <div className="absolute inset-0" style={{ background: 'rgba(5, 4, 18, 0.68)' }} />
+                <div className="absolute inset-0" style={{ background: 'rgba(3, 3, 1, 0.7)' }} />
 
                 {/* ── Organic Blended Rainbow Mesh Blobs ── */}
 
@@ -317,7 +317,7 @@ export default function RoadmapGenerator() {
                   position: 'absolute',
                   width: '70%', height: '75%',
                   bottom: '-25%', left: '-10%',
-                  background: 'radial-gradient(circle, #06b6d4 0%, #2563eb 55%, transparent 80%)',
+                  background: 'radial-gradient(circle, #a6a69f 0%, #51514c 55%, transparent 80%)',
                   borderRadius: '55% 45% 35% 65%',
                   filter: 'blur(80px)',
                   opacity: 0.85,
@@ -329,7 +329,7 @@ export default function RoadmapGenerator() {
                   position: 'absolute',
                   width: '65%', height: '70%',
                   top: '-15%', right: '-15%',
-                  background: 'radial-gradient(circle, #a855f7 0%, #7c3aed 50%, transparent 80%)',
+                  background: 'radial-gradient(circle, #c9303a 0%, #63050a 50%, transparent 80%)',
                   borderRadius: '40% 60% 50% 50%',
                   filter: 'blur(70px)',
                   opacity: 0.8,
@@ -461,17 +461,17 @@ export default function RoadmapGenerator() {
                       title="Polish with AI"
                       className="relative w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                       style={{
-                        background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)',
+                        background: 'linear-gradient(135deg, #480001 0%, #a81c26 50%, #c9303a 100%)',
                         boxShadow: polishing
-                          ? '0 0 16px rgba(139,92,246,0.8), 0 0 32px rgba(139,92,246,0.4)'
-                          : '0 0 8px rgba(139,92,246,0.5)',
+                          ? '0 0 16px rgba(201,48,58,0.8), 0 0 32px rgba(201,48,58,0.4)'
+                          : '0 0 8px rgba(201,48,58,0.5)',
                       }}
                     >
                       {/* Spinning ring when active */}
                       {polishing && (
                         <motion.span
                           className="absolute inset-0 rounded-full border-2 border-transparent"
-                          style={{ borderTopColor: '#e9d5ff', borderRightColor: '#e9d5ff' }}
+                          style={{ borderTopColor: '#f6c4c6', borderRightColor: '#f6c4c6' }}
                           animate={{ rotate: 360 }}
                           transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
                         />
@@ -533,7 +533,7 @@ export default function RoadmapGenerator() {
                       transition={{ duration: 0.15, ease: 'easeOut' }}
                       className="absolute z-[9999] w-full bottom-full mb-2 rounded-xl border border-white/10 shadow-2xl overflow-hidden"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(15,15,35,0.98) 0%, rgba(30,20,60,0.98) 100%)',
+                        background: 'linear-gradient(135deg, rgba(20,20,18,0.98) 0%, rgba(42,8,10,0.98) 100%)',
                         backdropFilter: 'blur(20px)',
                       }}
                     >

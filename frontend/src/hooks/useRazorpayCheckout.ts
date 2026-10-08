@@ -85,7 +85,7 @@ export function useRazorpayCheckout(defaultOptions: RazorpayCheckoutOptions = {}
             name: data.user.name,
             email: data.user.email,
           },
-          theme: { color: '#0891b2' },
+          theme: { color: '#480001' },
           handler: async (response) => {
             try {
               // Step 4: Verify payment signature on backend
